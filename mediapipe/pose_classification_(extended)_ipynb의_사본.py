@@ -54,7 +54,7 @@ class FullBodyPoseEmbedder(object):
         'left_foot_index', 'right_foot_index',
     ]
 
-  def __call__(self, landmarks):
+  def __call__(self, landmarks): # pose sample class를 만드니까 자동으로 호출 됨.
     """Normalizes pose landmarks and converts to embedding
     
     Args:
@@ -70,10 +70,10 @@ class FullBodyPoseEmbedder(object):
     landmarks = np.copy(landmarks)
 
     # Normalize landmarks.
-    landmarks = self._normalize_pose_landmarks(landmarks)
+    landmarks = self._normalize_pose_landmarks(landmarks) # 엉덩이 중심을 몸의 중심으로 보고, max distance(몸의 중심과 가장 많이 떨어진 곳과의 거리) 로 모든 landmark를 나눠준다.
 
     # Get embedding.
-    embedding = self._get_pose_distance_embedding(landmarks)
+    embedding = self._get_pose_distance_embedding(landmarks) # 어깨와 손목 사이의 거리, 두 엉덩이 사이의 거리, 무릎과 발목 사이의 거리 (normalized) 등으로 embedding을 구성
 
     return embedding
 
@@ -82,18 +82,18 @@ class FullBodyPoseEmbedder(object):
     landmarks = np.copy(landmarks)
 
     # Normalize translation.
-    pose_center = self._get_pose_center(landmarks)
+    pose_center = self._get_pose_center(landmarks) # 엉덩이의 중심이 몸의 중심이라고 보고 그 좌표를 반환함.
     landmarks -= pose_center
 
     # Normalize scale.
-    pose_size = self._get_pose_size(landmarks, self._torso_size_multiplier)
-    landmarks /= pose_size
+    pose_size = self._get_pose_size(landmarks, self._torso_size_multiplier) # 엉덩이 쪽의 좌표와 가장 먼 곳의 위치한 곳의 거리
+    landmarks /= pose_size # normalize
     # Multiplication by 100 is not required, but makes it eaasier to debug.
     landmarks *= 100
 
     return landmarks
 
-  def _get_pose_center(self, landmarks):
+  def _get_pose_center(self, landmarks): # 말 그대로, 엉덩이가 몸의 중심이라고 보고 그 좌표를 반환하는 함수
     """Calculates pose center as point between hips."""
     left_hip = landmarks[self._landmark_names.index('left_hip')]
     right_hip = landmarks[self._landmark_names.index('right_hip')]
@@ -121,11 +121,11 @@ class FullBodyPoseEmbedder(object):
     shoulders = (left_shoulder + right_shoulder) * 0.5
 
     # Torso size as the minimum body size.
-    torso_size = np.linalg.norm(shoulders - hips)
+    torso_size = np.linalg.norm(shoulders - hips) # Frobenius norm
 
     # Max dist to pose center.
     pose_center = self._get_pose_center(landmarks)
-    max_dist = np.max(np.linalg.norm(landmarks - pose_center, axis=1))
+    max_dist = np.max(np.linalg.norm(landmarks - pose_center, axis=1)) # 모든 pose에서 center를 뺀 것 중에 max 값.
 
     return max(torso_size * torso_size_multiplier, max_dist)
 
@@ -303,7 +303,7 @@ class PoseClassifier(object):
             continue
           assert len(row) == n_landmarks * n_dimensions + 1, 'Wrong number of values: {}'.format(len(row))
           landmarks = np.array(row[1:], np.float32).reshape([n_landmarks, n_dimensions])
-          pose_samples.append(PoseSample(
+          pose_samples.append(PoseSample( # POseSample은모든 시간 축에 속한 sample들 (normalized 된 몸 특정 지점 사이의 거리)의 embedding vector로 구성
               name=row[0],
               landmarks=landmarks,
               class_name=class_name,
@@ -324,12 +324,13 @@ class PoseClassifier(object):
 
       # Sample is an outlier if nearest poses have different class or more than
       # one pose class is detected as nearest.
+      # 즉, 거리가 얼마 차이나지 않는 클래스들 중에 현재 클래스와 다른 클래스가 있는지를 찾는 것!
       if sample.class_name not in class_names or len(class_names) != 1:
         outliers.append(PoseSampleOutlier(sample, class_names, pose_classification))
 
     return outliers
 
-  def __call__(self, pose_landmarks):
+  def __call__(self, pose_landmarks): # classification code
     """Classifies given pose.
 
     Classification is done in two stages:
@@ -338,9 +339,11 @@ class PoseClassifier(object):
         other direction.
       * Then we pick top-N samples by MEAN distance. After outliers are removed
         on a previous step, we can pick samples that are closes on average.
+
+        정리하자면, 전체 sample 중 유사한 애들과 비교해서 걔들의 클래스를 반환한다!
     
     Args:
-      pose_landmarks: NumPy array with 3D landmarks of shape (N, 3).
+      pose_landmarks: NumPy array with 3D landmarks of shape (N, 3). In one sample!!!
 
     Returns:
       Dictionary with count of nearest pose samples from the database. Sample:
@@ -360,23 +363,25 @@ class PoseClassifier(object):
     #
     # That helps to remove outliers - poses that are almost the same as the
     # given one, but has one joint bent into another direction and actually
-    # represnt a different pose class.
+    # represent a different pose class.
     max_dist_heap = []
-    for sample_idx, sample in enumerate(self._pose_samples):
+    for sample_idx, sample in enumerate(self._pose_samples): # 각 image가 현재 이미지랑 최대로 다른 값은 얼만지를 구한다.
+      a = np.max(np.abs(sample.embedding - pose_embedding) * self._axes_weights)
+      b = np.max(np.abs(sample.embedding - flipped_pose_embedding) * self._axes_weights)
       max_dist = min(
           np.max(np.abs(sample.embedding - pose_embedding) * self._axes_weights),
           np.max(np.abs(sample.embedding - flipped_pose_embedding) * self._axes_weights),
       )
       max_dist_heap.append([max_dist, sample_idx])
 
-    max_dist_heap = sorted(max_dist_heap, key=lambda x: x[0])
+    max_dist_heap = sorted(max_dist_heap, key=lambda x: x[0]) # 다른 모든 이미지와 비교했을 때, 어느 특정 부분의 거리 차이 (x, y, z 통합)
     max_dist_heap = max_dist_heap[:self._top_n_by_max_distance]
 
     # Filter by mean distance.
     #
     # After removing outliers we can find the nearest pose by mean distance.
     mean_dist_heap = []
-    for _, sample_idx in max_dist_heap:
+    for _, sample_idx in max_dist_heap: # 각 image가 현재 이미지랑 평균적으로 얼마나 다른지를 구한다.
       sample = self._pose_samples[sample_idx]
       mean_dist = min(
           np.mean(np.abs(sample.embedding - pose_embedding) * self._axes_weights),
@@ -391,7 +396,7 @@ class PoseClassifier(object):
     class_names = [self._pose_samples[sample_idx].class_name for _, sample_idx in mean_dist_heap]
     result = {class_name: class_names.count(class_name) for class_name in set(class_names)}
 
-    return result
+    return result # 얘는, 현재 샘플 중, 가장 가까운 애들을 여러개 봤을 때, 가까운 애들의 클래스 별 개수를 반환한다.
 
 """## Classification smoothing"""
 
@@ -661,7 +666,7 @@ class BootstrapHelper(object):
     # Get list of pose classes and print image statistics.
     self._pose_class_names = sorted([n for n in os.listdir(self._images_in_folder) if not n.startswith('.')])
     
-  def bootstrap(self, per_pose_class_limit=None):
+  def bootstrap(self, per_pose_class_limit=None): # Load images, write pose landmarks to csv, save pose estimation result to original images.
     """Bootstraps images in a given folder.
     
     Required image in folder (same use for image out folder):
@@ -712,7 +717,7 @@ class BootstrapHelper(object):
 
           # Initialize fresh pose tracker and run it.
           with mp_pose.Pose(upper_body_only=False) as pose_tracker:
-            result = pose_tracker.process(image=input_frame)
+            result = pose_tracker.process(image=input_frame) # pose tracker in here
             pose_landmarks = result.pose_landmarks
 
           # Save image with pose prediction (if pose was detected).
@@ -763,7 +768,7 @@ class BootstrapHelper(object):
 
     return np.asarray(img)
 
-  def align_images_and_csvs(self, print_removed_items=False):
+  def align_images_and_csvs(self, print_removed_items=False): # checkout the existness of image in the each rows of csv.
     """Makes sure that image folders and CSVs have the same sample.
     
     Leaves only intersetion of samples in both image folders and CSVs.
@@ -1006,7 +1011,6 @@ def dump_for_the_app():
           row.insert(1, class_name)
           csv_out_writer.writerow(row)
 
-  files.download(pose_samples_csv_path)
 
 
 dump_for_the_app()
@@ -1017,11 +1021,9 @@ dump_for_the_app()
 """
 
 # Upload your video.
-uploaded = files.upload()
-os.listdir('.')
 
 # Specify your video name and target pose class to count the repetitions.
-video_path = 'pushups-sample.mov'
+video_path = 'demo2.mp4'
 class_name='pushups_down'
 out_video_path = 'pushups-sample-out.mov'
 
@@ -1167,6 +1169,3 @@ pose_tracker.close()
 # Show the last frame of the video.
 if output_frame is not None:
   show_image(output_frame)
-
-# Download generated video
-files.download(out_video_path)

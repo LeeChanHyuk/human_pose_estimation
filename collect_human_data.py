@@ -1,12 +1,12 @@
 import cv2
 import os
 
-save_base_folder = 'C:/Users/user/Desktop/Project/human_pose_detection'
+save_base_folder = '/home'
 
-if not os.path.exists(os.path.join(save_base_folder, 'left')):
-	os.mkdir(os.path.join(save_base_folder, 'left'))
-if not os.path.exists(os.path.join(save_base_folder, 'right')):
-	os.mkdir(os.path.join(save_base_folder, 'right'))
+#if not os.path.exists(os.path.join(save_base_folder, 'left')):
+#	os.mkdir(os.path.join(save_base_folder, 'left'))
+#if not os.path.exists(os.path.join(save_base_folder, 'right')):
+#	os.mkdir(os.path.join(save_base_folder, 'right'))
 
 cap = cv2.VideoCapture(0)
 left_count=0
