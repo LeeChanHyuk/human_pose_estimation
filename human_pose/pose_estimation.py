@@ -5,6 +5,7 @@
 ##############################################################
 
 import argparse
+import math
 import head_pose_estimation_module.service as service
 import cv2
 import time
@@ -63,13 +64,13 @@ def main(color=(224, 255, 255)):
             model_selection=0, min_detection_confidence=0.5) as face_detection:
             while cap.isOpened:
                 # Load the frame from webcam
+                start_time = time.time()
                 ret, frame = cap.read()
 
                 # frame shape for return normalized bounding box info
                 height, width = frame.shape[:2]
 
                 # Inference time check
-                start_time = time.time()
 
                 if not ret:
                     break
@@ -106,36 +107,47 @@ def main(color=(224, 255, 255)):
                         #print('pitch = ', pitch, 'yaw = ', yaw, 'roll = ',roll)
                         # cv2.imwrite(f'draft/gif/trans/img{counter:0>4}.jpg', frame)
 
-                        #frame.flags.writeable = False
+                        frame.flags.writeable = False
                         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
                         # Estimate body pose
                         results = pose.process(frame)
-                        body_landmarks= results.pose_landmarks
-                        body_landmarks = np.array([[lmk.x * width, lmk.y * height, lmk.z * width]
-                            for lmk in body_landmarks.landmark], dtype=np.float32)
-                        left_hip = body_landmarks[landmark_names.index('left_hip')]
-                        right_hip = body_landmarks[landmark_names.index('right_hip')]
-                        print(left_hip)
-                        print('body_count')
+                        if results.pose_landmarks:
+                            body_landmarks= results.pose_landmarks
+                            body_landmarks = np.array([[lmk.x * width, lmk.y * height, lmk.z * width]
+                                for lmk in body_landmarks.landmark], dtype=np.float32)
+                            left_hip = body_landmarks[landmark_names.index('left_hip')]
+                            right_hip = body_landmarks[landmark_names.index('right_hip')]
+                            center_hip = (left_hip + right_hip) / 2
+                            left_knee = body_landmarks[landmark_names.index('left_knee')]
+                            right_knee = body_landmarks[landmark_names.index('right_knee')]
+                            center_knee = (left_knee + right_knee) / 2
+                            downside_body_vector = center_hip - center_knee
+                            left_shoulder = body_landmarks[landmark_names.index('left_shoulder')]
+                            right_shoulder = body_landmarks[landmark_names.index('right_shoulder')]
+                            center_shoulder = (left_shoulder + right_shoulder) / 2
+                            upside_body_vector = center_shoulder - center_hip
+                            print('Left: ', str(left_shoulder))
+                            print('Right: ', str(right_shoulder))
+                        
 
                         # Draw the pose annotation on the image.
-                        #frame.flags.writeable = True
+                        frame.flags.writeable = True
                         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
                         # For visualization
-                        #mp_drawing.draw_landmarks(
-                        #    frame,
-                        #    results.pose_landmarks,
-                        #    mp_pose.POSE_CONNECTIONS,
-                        #    landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style())
+                        mp_drawing.draw_landmarks(
+                            frame,
+                            results.pose_landmarks,
+                            mp_pose.POSE_CONNECTIONS,
+                            landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style())
                         # Flip the image horizontally for a selfie-view display.
                         cv2.imshow('MediaPipe Pose', cv2.flip(frame, 1))
 
                         # Check the FPS
-                        print('fps = ', 1/(time.time() - start_time))
-                        if cv2.waitKey(5) & 0xFF == 27:
-                            break
+                    #print('fps = ', 1/(time.time() - start_time))
+                    if cv2.waitKey(5) & 0xFF == 27:
+                        break
 
 if __name__ == "__main__":
     main()
