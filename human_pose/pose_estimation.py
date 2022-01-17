@@ -6,6 +6,8 @@
 
 import argparse
 import math
+from turtle import right
+from gaze_estimation_module.gaze_estimation import estimate_gaze_from_face_image
 import head_pose_estimation_module.service as service
 import cv2
 import time
@@ -41,6 +43,23 @@ landmark_names = [
 ]
 
 
+def upside_body_pose_calculator(left_shoulder, right_shoulder):
+    center_shoulder = (left_shoulder + right_shoulder) / 2
+    # Yaw
+    if left_shoulder[2] > right_shoulder[2]: # yaw (-) direction
+        direction_vector = (left_shoulder - center_shoulder)
+        direction_vector = (direction_vector[0], direction_vector[2])
+        pivot_vector = [-1, 0]
+        theta = (direction_vector[0]*pivot_vector[1] - direction_vector[1] * pivot_vector[0]) / ((math.sqrt(direction_vector[0] ** 2 + direction_vector[1] ** 2)) * (math.sqrt(pivot_vector[0] ** 2 + pivot_vector[1] ** 2)))
+        theta = math.asin(theta)
+        return theta * -1
+    else:
+        direction_vector = (left_shoulder - center_shoulder)
+        direction_vector = (direction_vector[0], direction_vector[2])
+        pivot_vector = [1, 0]
+        theta = (direction_vector[0]*pivot_vector[1] - direction_vector[1] * pivot_vector[0]) / ((math.sqrt(direction_vector[0] ** 2 + direction_vector[1] ** 2)) * (math.sqrt(pivot_vector[0] ** 2 + pivot_vector[1] ** 2)))
+        theta = math.asin(theta)
+        return theta
 
 
 def main(color=(224, 255, 255)):
@@ -125,10 +144,13 @@ def main(color=(224, 255, 255)):
                             downside_body_vector = center_hip - center_knee
                             left_shoulder = body_landmarks[landmark_names.index('left_shoulder')]
                             right_shoulder = body_landmarks[landmark_names.index('right_shoulder')]
-                            center_shoulder = (left_shoulder + right_shoulder) / 2
-                            upside_body_vector = center_shoulder - center_hip
                             print('Left: ', str(left_shoulder))
                             print('Right: ', str(right_shoulder))
+                            if left_shoulder is not None and right_shoulder is not None:
+                                theta = upside_body_pose_calculator(left_shoulder, right_shoulder)
+                                if theta:
+                                    theta = theta * 180 / math.pi
+                                    print('yaw_theta', str(theta))
                         
 
                         # Draw the pose annotation on the image.
@@ -141,6 +163,10 @@ def main(color=(224, 255, 255)):
                             results.pose_landmarks,
                             mp_pose.POSE_CONNECTIONS,
                             landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style())
+
+                        # For gaze estimation
+                        face_image = frame[boxes[1]:boxes[3], boxes[0]:boxes[2]]
+                        frame = estimate_gaze_from_face_image(feed,frame, face_image)
                         # Flip the image horizontally for a selfie-view display.
                         cv2.imshow('MediaPipe Pose', cv2.flip(frame, 1))
 
