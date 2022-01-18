@@ -28,9 +28,9 @@ mp_pose = mp.solutions.pose
 mp_face_detection = mp.solutions.face_detection
 mp_face_mesh = mp.solutions.face_mesh
 visualization = True
-body_pose_estimation = True
-head_pose_estimation = True
-gaze_estimation = True
+body_pose_estimation = True 
+head_pose_estimation = True # 12 프레임 저하
+gaze_estimation = False # 22프레임 저하
 
 
 
@@ -201,11 +201,9 @@ def main(color=(224, 255, 255)):
                         for results in fa.get_landmarks(feed, face_boxes):
                             pitch, yaw, roll = handler(frame, results, color)
 
-                        if gaze_estimation:
-                            # For gaze estimation
-                            box = face_boxes[0]
-                            #face_image = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2]), :]
-                            frame = estimate_gaze_from_face_image(feed, frame, face_boxes, left_eye_boxes, right_eye_boxes, visualization)
+                    # Estimate gaze
+                    if gaze_estimation:
+                        frame = estimate_gaze_from_face_image(feed, frame, face_boxes, left_eye_boxes, right_eye_boxes, visualization)
 
                 if body_pose_estimation:
                     # Estimate body pose

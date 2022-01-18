@@ -1,10 +1,12 @@
 #!/usr/bin/python3
 # -*- coding:utf-8 -*-
 
+from tracemalloc import start
 import numpy as np
 import cv2
 import tensorflow as tf
 from functools import partial
+import time
 
 
 class BaseTFLiteFaceAlignment():
@@ -100,10 +102,16 @@ class BaseTFLiteFaceAlignment():
         for box in detected_faces:
             if box[2] - box[0] < 100:
                 continue
+            start_time = time.time()
             inp, M = self._preprocessing(image, box)
+            print('preprocessing_time is ', time.time() - start_time)
+            start_time = time.time()
             self._inference(inp)
+            print('inference_time is ', time.time() - start_time)
 
+            start_time = time.time()
             yield self._postprocessing(M)
+            print('post_time is ', time.time() - start_time)
 
 
 class DenseFaceReconstruction(BaseTFLiteFaceAlignment):
