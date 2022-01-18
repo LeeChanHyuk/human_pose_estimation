@@ -3,6 +3,9 @@
 ##############################################################
 ################## 2022.01.09.ChanHyukLee ####################
 ##############################################################
+# Facial & Body landmark is from mediaPipe
+# Gaze estimation module is from david-wb (https://github.com/david-wb/gaze-estimation)
+# Head pose estimation module is from 1996scarlet (https://github.com/1996scarlet/Dense-Head-Pose-Estimation)
 
 import argparse
 import math
@@ -24,6 +27,11 @@ mp_drawing_styles = mp.solutions.drawing_styles
 mp_pose = mp.solutions.pose
 mp_face_detection = mp.solutions.face_detection
 mp_face_mesh = mp.solutions.face_mesh
+visualization = True
+body_pose_estimation = True
+head_pose_estimation = True
+gaze_estimation = True
+
 
 
 landmark_names = [
@@ -98,12 +106,10 @@ def upside_body_pose_calculator(left_shoulder, right_shoulder, center_hip):
 
 def main(color=(224, 255, 255)):
     base_path = os.getcwd()
-
-    # Tensorflow lite detection model. (Deep learning based. But slower than mediapipe's face detection model)
-    #fd = service.UltraLightFaceDetecion(os.path.join(base_path,"human_pose/head_pose_estimation_module/weights/RFB-320.tflite"),
-    #                                    conf_threshold=0.95)
-
+    
+    # Initialization step
     fa = service.DepthFacialLandmarks(os.path.join(base_path, "head_pose_estimation_module/weights/sparse_face.tflite"))
+    #fa = service.DenseFaceReconstruction(os.path.join(base_path, "head_pose_estimation_module/weights/dense_face.tflite"))
     print('Head detection module is initialized')
 
     # Initialinze Head pose estimation object handler
@@ -116,11 +122,10 @@ def main(color=(224, 255, 255)):
     # Define pose estimation & face detection thresholds
     with mp_pose.Pose(
         min_detection_confidence=0.5,
-        min_tracking_confidence=0.5) as pose:
+        min_tracking_confidence=0.5,
+        model_complexity=0) as pose:
         with mp_face_mesh.FaceMesh(
-            static_image_mode=True,
             max_num_faces=1,
-            refine_landmarks=True,
             min_detection_confidence=0.5) as face_mesh:
             #try:
             print('Camera settings is started')
@@ -153,22 +158,20 @@ def main(color=(224, 255, 255)):
                 frame = np.array(frame.get_data())
                 if depth.shape != frame.shape:
                     frame = cv2.resize(frame, dsize=(depth.shape[1], depth.shape[0]), interpolation=cv2.INTER_AREA)
+
                 # frame shape for return normalized bounding box info
                 height, width = frame.shape[:2]
 
-                # face detection from other deep learning model. (ECCV, 2020)
-                #boxes, scores = fd.inference(frame)
-
                 # Media pipe face detection
-                results = face_mesh.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+                bgr_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                results = face_mesh.process(bgr_image)
+
                 # Multi-face detection
                 if results.multi_face_landmarks:
                     face_boxes = []
                     left_eye_boxes = []
                     right_eye_boxes = []
                     for face_landmarks in results.multi_face_landmarks:
-                        #print(face_landmarks)
-                        #print(len(face_landmarks.landmark))
                         face_x1 = face_landmarks.landmark[234].x * width
                         face_y1 = face_landmarks.landmark[10].y * height
                         face_x2 = face_landmarks.landmark[454].x * width
@@ -178,28 +181,10 @@ def main(color=(224, 255, 255)):
                         left_eye_inner_y1 = face_landmarks.landmark[161].y * height
                         left_eye_inner_x2 = face_landmarks.landmark[154].x * width
                         left_eye_inner_y2 = face_landmarks.landmark[154].y * height
-                        left_eye_middle_x1 = face_landmarks.landmark[247].x * width
-                        left_eye_middle_y1 = face_landmarks.landmark[247].y * height
-                        left_eye_middle_x2 = face_landmarks.landmark[112].x * width
-                        left_eye_middle_y2 = face_landmarks.landmark[112].y * height
-                        left_eye_outer_x1 = face_landmarks.landmark[46].x * width
-                        left_eye_outer_y1 = face_landmarks.landmark[46].y * height
-                        left_eye_outer_x2 = face_landmarks.landmark[188].x * width
-                        left_eye_outer_y2 = face_landmarks.landmark[188].y * height
-
                         right_eye_inner_x1 = face_landmarks.landmark[398].x * width
                         right_eye_inner_y1 = face_landmarks.landmark[398].y * height
                         right_eye_inner_x2 = face_landmarks.landmark[390].x * width
                         right_eye_inner_y2 = face_landmarks.landmark[390].y * height
-                        right_eye_middle_x1 = face_landmarks.landmark[414].x * width
-                        right_eye_middle_y1 = face_landmarks.landmark[414].y * height
-                        right_eye_middle_x2 = face_landmarks.landmark[255].x * width
-                        right_eye_middle_y2 = face_landmarks.landmark[255].y * height
-                        right_eye_outer_x1 = face_landmarks.landmark[413].x * width
-                        right_eye_outer_y1 = face_landmarks.landmark[413].y * height
-                        right_eye_outer_x2 = face_landmarks.landmark[448].x * width
-                        right_eye_outer_y2 = face_landmarks.landmark[448].y * height
-
                         face_boxes.append([face_x1-10, face_y1-10, face_x2+10, face_y2+10])
                         left_eye_boxes.append([left_eye_inner_x1, left_eye_inner_y1, left_eye_inner_x2, left_eye_inner_y2])
                         right_eye_boxes.append([right_eye_inner_x1, right_eye_inner_y1, right_eye_inner_x2, right_eye_inner_y2])
@@ -207,98 +192,92 @@ def main(color=(224, 255, 255)):
                     face_boxes = np.array(face_boxes)
                     left_eye_boxes = np.array(left_eye_boxes)
                     right_eye_boxes = np.array(right_eye_boxes)
-                    
-                    
 
                     # raw copy for reconstruction
                     feed = frame.copy()
                     
                     # Estimate head pose
-                    if not only_detection_mode:
+                    if head_pose_estimation:
                         for results in fa.get_landmarks(feed, face_boxes):
                             pitch, yaw, roll = handler(frame, results, color)
-                            #print('pitch = ', pitch, 'yaw = ', yaw, 'roll = ',roll)
-                        # cv2.imwrite(f'draft/gif/trans/img{counter:0>4}.jpg', frame)
 
-                        frame.flags.writeable = False
-                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        if gaze_estimation:
+                            # For gaze estimation
+                            box = face_boxes[0]
+                            #face_image = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2]), :]
+                            frame = estimate_gaze_from_face_image(feed, frame, face_boxes, left_eye_boxes, right_eye_boxes, visualization)
 
-                        # Estimate body pose
-                        results = pose.process(frame)
-                        if results.pose_landmarks:
-                            body_landmarks= results.pose_landmarks
-                            body_landmarks = np.array([[lmk.x * width, lmk.y * height, lmk.z * width]
-                                for lmk in body_landmarks.landmark], dtype=np.float32)
-                            
-                            # Calculate down-side body pose
-                            left_hip = body_landmarks[landmark_names.index('left_hip')]
-                            right_hip = body_landmarks[landmark_names.index('right_hip')]
-                            left_knee = body_landmarks[landmark_names.index('left_knee')]
-                            right_knee = body_landmarks[landmark_names.index('right_knee')]
-                            center_knee = (left_knee + right_knee) / 2
-
-                            # Calculate up-side body pose
-                            left_shoulder = body_landmarks[landmark_names.index('left_shoulder')]
-                            right_shoulder = body_landmarks[landmark_names.index('right_shoulder')]
-
-                            # Change z-position from the Depth image because the original z-position is estimated position from face pose 
-                            # offset is the margin of shoulder position
-                            left_y_offset = 10
-                            left_x_offset = 20
-                            right_x_offset = 20
-                            right_y_offset = 10
-                            left_shoulder[2] = depth[min(int(left_shoulder[1])+left_y_offset, 479), min(639, int(left_shoulder[0])-left_x_offset)]
-                            right_shoulder[2] = depth[min(int(right_shoulder[1])+right_y_offset, 479), max(0, int(right_shoulder[0])+right_x_offset)]
-                            left_hip[2] = depth[min(int(left_hip[1])+left_y_offset, 479), min(639, int(left_hip[0])-left_x_offset)]
-                            right_hip[2] = depth[min(int(right_hip[1])+right_y_offset, 479), max(0, int(right_hip[0])+right_x_offset)]
-                            center_hip = (left_hip + right_hip) / 2
-                            center_stomach = [int(max(0, min(center_hip[0], 639))),int(max(0, min((center_hip[1] * 2 + (left_shoulder[1] + right_shoulder[1]))/3, 479))), 0]
-                            center_stomach[2] = depth[center_stomach[1], center_stomach[0]]
-                            cv2.circle(frame, (int(left_shoulder[0]-left_y_offset), int(left_shoulder[1]+left_x_offset)), 3, (0, 255, 0), 3)
-                            cv2.circle(frame, (int(right_shoulder[0]+right_y_offset), int(right_shoulder[1]+right_x_offset)), 3, (0, 255, 0), 3)
-                            cv2.circle(frame, (int(center_stomach[0]), int(center_stomach[1])), 3, (0, 255, 0), 3)
-                            print('Left: ', str(left_shoulder))
-                            print('Right: ', str(right_shoulder))
-
-                            # Visualization
-                            depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth, alpha=0.03), cv2.COLORMAP_JET)
-                            cv2.circle(depth_colormap, (int(left_shoulder[0]-left_y_offset), int(left_shoulder[1]+left_x_offset)), 3, (0, 255, 0), 3)
-                            cv2.circle(depth_colormap, (int(right_shoulder[0]+right_y_offset), int(right_shoulder[1]+right_x_offset)), 3, (0, 255, 0), 3)
-                            cv2.imshow('depth', depth_colormap)
-                            if left_shoulder is not None and right_shoulder is not None:
-                                upper_body_yaw, upper_body_pitch, upper_body_roll = upside_body_pose_calculator(left_shoulder, right_shoulder, center_stomach)
-                                if upper_body_yaw:
-                                    upper_body_yaw = upper_body_yaw * 180 / math.pi
-                                    print('yaw_theta', str(upper_body_yaw))
-                                    upper_body_pitch = upper_body_pitch * 180 / math.pi
-                                    print('pitch_theta', str(upper_body_pitch))
-                                    upper_body_roll = upper_body_roll * 180 / math.pi
-                                    print('roll_theta', str(upper_body_roll))
+                if body_pose_estimation:
+                    # Estimate body pose
+                    results = pose.process(frame)
+                    if results.pose_landmarks:
+                        body_landmarks= results.pose_landmarks
+                        body_landmarks = np.array([[lmk.x * width, lmk.y * height, lmk.z * width]
+                            for lmk in body_landmarks.landmark], dtype=np.float32)
                         
-                        # Draw the pose annotation on the image.
-                        frame.flags.writeable = True
-                        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-                        for i in range(len(left_eye_boxes)):
-                            cv2.rectangle(frame, (int(left_eye_boxes[i][0]), int(left_eye_boxes[i][1])), (int(left_eye_boxes[i][2]), int(left_eye_boxes[i][3])), (255, 255, 0), 1)
-                            cv2.rectangle(frame, (int(right_eye_boxes[i][0]), int(right_eye_boxes[i][1])), (int(right_eye_boxes[i][2]), int(right_eye_boxes[i][3])), (0, 255, 0), 1)
+                        # Calculate down-side body pose
+                        left_hip = body_landmarks[landmark_names.index('left_hip')]
+                        right_hip = body_landmarks[landmark_names.index('right_hip')]
 
-                        # For visualization
+                        # Calculate up-side body pose
+                        left_shoulder = body_landmarks[landmark_names.index('left_shoulder')]
+                        right_shoulder = body_landmarks[landmark_names.index('right_shoulder')]
+
+                        # Change z-position from the Depth image because the original z-position is estimated position from face pose 
+                        # offset is the margin of shoulder position
+                        left_y_offset = 10
+                        left_x_offset = 20
+                        right_x_offset = 20
+                        right_y_offset = 10
+                        left_shoulder[2] = depth[min(int(left_shoulder[1])+left_y_offset, height-1), min(width-1, int(left_shoulder[0])-left_x_offset)]
+                        right_shoulder[2] = depth[min(int(right_shoulder[1])+right_y_offset, height-1), max(0, int(right_shoulder[0])+right_x_offset)]
+                        left_hip[2] = depth[min(int(left_hip[1])+left_y_offset, height-1), min(width-1, int(left_hip[0])-left_x_offset)]
+                        right_hip[2] = depth[min(int(right_hip[1])+right_y_offset, height-1), max(0, int(right_hip[0])+right_x_offset)]
+                        center_hip = (left_hip + right_hip) / 2
+                        center_stomach = [int(max(0, min(center_hip[0], width-1))),int(max(0, min((center_hip[1] * 2 + (left_shoulder[1] + right_shoulder[1]))/3, height-1))), 0]
+                        center_stomach[2] = depth[center_stomach[1], center_stomach[0]]
+
+                # Visualization
+                if visualization:
+                    # apply colormap to depthmap
+                    depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth, alpha=0.03), cv2.COLORMAP_JET)
+
+                    if body_pose_estimation:
+                        cv2.circle(depth_colormap, (int(left_shoulder[0]-left_y_offset), int(left_shoulder[1]+left_x_offset)), 3, (0, 255, 0), 3)
+                        cv2.circle(depth_colormap, (int(right_shoulder[0]+right_y_offset), int(right_shoulder[1]+right_x_offset)), 3, (0, 255, 0), 3)
+                        cv2.circle(frame, (int(left_shoulder[0]-left_y_offset), int(left_shoulder[1]+left_x_offset)), 3, (0, 255, 0), 3)
+                        cv2.circle(frame, (int(right_shoulder[0]+right_y_offset), int(right_shoulder[1]+right_x_offset)), 3, (0, 255, 0), 3)
+                        cv2.circle(frame, (int(center_stomach[0]), int(center_stomach[1])), 3, (0, 255, 0), 3)
+                        cv2.imshow('depth', depth_colormap)
                         mp_drawing.draw_landmarks(
                             frame,
                             results.pose_landmarks,
                             mp_pose.POSE_CONNECTIONS,
                             landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style())
+                        if left_shoulder is not None and right_shoulder is not None:
+                            upper_body_yaw, upper_body_pitch, upper_body_roll = upside_body_pose_calculator(left_shoulder, right_shoulder, center_stomach)
+                            if upper_body_yaw:
+                                upper_body_yaw = upper_body_yaw * 180 / math.pi
+                                print('yaw_theta', str(upper_body_yaw))
+                                upper_body_pitch = upper_body_pitch * 180 / math.pi
+                                print('pitch_theta', str(upper_body_pitch))
+                                upper_body_roll = upper_body_roll * 180 / math.pi
+                                print('roll_theta', str(upper_body_roll))
 
-                        # For gaze estimation
-                        box = face_boxes[0]
-                        #face_image = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2]), :]
-                        frame = estimate_gaze_from_face_image(feed, frame, face_boxes, left_eye_boxes, right_eye_boxes)
+                    if head_pose_estimation:
+                        print('head pose yaw: ', yaw)
+                        print('head pose pitch: ', pitch)
+                        print('head pose roll: ', roll)
 
-                        # Flip the image horizontally for a selfie-view display.
-                        cv2.imshow('MediaPipe Pose', frame)
+                    if gaze_estimation:
+                        for i in range(len(left_eye_boxes)):
+                            cv2.rectangle(frame, (int(left_eye_boxes[i][0]), int(left_eye_boxes[i][1])), (int(left_eye_boxes[i][2]), int(left_eye_boxes[i][3])), (255, 255, 0), 1)
+                            cv2.rectangle(frame, (int(right_eye_boxes[i][0]), int(right_eye_boxes[i][1])), (int(right_eye_boxes[i][2]), int(right_eye_boxes[i][3])), (0, 255, 0), 1)
+                    # Flip the image horizontally for a selfie-view display.
+                    cv2.imshow('MediaPipe Pose', frame)
 
-                        # Check the FPS
-                    #print('fps = ', 1/(time.time() - start_time))
+                    # Check the FPS
+                    print('fps = ', 1/(time.time() - start_time))
                     if cv2.waitKey(5) & 0xFF == 27:
                         break
             #except Exception as e:
