@@ -7,7 +7,6 @@ runs/
 .ipynb_checkpoints
 *.zip
 *.jpg
-checkpoint*
 *.bz2
 *.tar.gz
 *.pdf
