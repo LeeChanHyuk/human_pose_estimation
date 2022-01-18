@@ -30,7 +30,7 @@ mp_face_mesh = mp.solutions.face_mesh
 visualization = True
 body_pose_estimation = True 
 head_pose_estimation = True # 12 프레임 저하
-gaze_estimation = False # 22프레임 저하
+gaze_estimation = True # 22프레임 저하
 
 
 
@@ -118,6 +118,7 @@ def main(color=(224, 255, 255)):
 
     align_to = rs.stream.color
     align = rs.align(align_to)
+    yaw, pitch, roll = 0, 0, 0
 
     # Define pose estimation & face detection thresholds
     with mp_pose.Pose(
