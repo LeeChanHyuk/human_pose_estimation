@@ -8,6 +8,7 @@
 # Head pose estimation module is from 1996scarlet (https://github.com/1996scarlet/Dense-Head-Pose-Estimation)
 
 import argparse
+from cgitb import text
 import math
 from ssl import ALERT_DESCRIPTION_NO_RENEGOTIATION
 from turtle import right
@@ -19,6 +20,7 @@ import os
 import mediapipe as mp
 import numpy as np
 import pyrealsense2 as rs
+import utils
 
 only_detection_mode = False
 
@@ -28,6 +30,7 @@ mp_pose = mp.solutions.pose
 mp_face_detection = mp.solutions.face_detection
 mp_face_mesh = mp.solutions.face_mesh
 visualization = True
+text_visualization = False
 body_pose_estimation = True 
 head_pose_estimation = True # 12 프레임 저하
 gaze_estimation = True # 22프레임 저하
@@ -64,14 +67,14 @@ def upside_body_pose_calculator(left_shoulder, right_shoulder, center_hip):
         pivot_vector = [-1, 0]
         theta = (direction_vector[0]*pivot_vector[1] - direction_vector[1] * pivot_vector[0]) / ((math.sqrt(direction_vector[0] ** 2 + direction_vector[1] ** 2)) * (math.sqrt(pivot_vector[0] ** 2 + pivot_vector[1] ** 2)))
         theta = math.asin(theta)
-        yaw = theta
+        yaw = -1 * theta
     else:
         direction_vector = (left_shoulder - center_shoulder)
         direction_vector = (direction_vector[0], direction_vector[2])
         pivot_vector = [1, 0]
         theta = (direction_vector[0]*pivot_vector[1] - direction_vector[1] * pivot_vector[0]) / ((math.sqrt(direction_vector[0] ** 2 + direction_vector[1] ** 2)) * (math.sqrt(pivot_vector[0] ** 2 + pivot_vector[1] ** 2)))
         theta = math.asin(theta)
-        yaw = (theta * -1)
+        yaw = theta
     # Pitch
     if center_shoulder[2] < center_hip[2]: # pitch (-) direction
         direction_vector = (center_shoulder - center_hip)
@@ -124,7 +127,7 @@ def main(color=(224, 255, 255)):
     with mp_pose.Pose(
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5,
-        model_complexity=0) as pose:
+        model_complexity=1) as pose:
         with mp_face_mesh.FaceMesh(
             max_num_faces=1,
             min_detection_confidence=0.5) as face_mesh:
@@ -244,9 +247,6 @@ def main(color=(224, 255, 255)):
                     if body_pose_estimation:
                         cv2.circle(depth_colormap, (int(left_shoulder[0]-left_y_offset), int(left_shoulder[1]+left_x_offset)), 3, (0, 255, 0), 3)
                         cv2.circle(depth_colormap, (int(right_shoulder[0]+right_y_offset), int(right_shoulder[1]+right_x_offset)), 3, (0, 255, 0), 3)
-                        cv2.circle(frame, (int(left_shoulder[0]-left_y_offset), int(left_shoulder[1]+left_x_offset)), 3, (0, 255, 0), 3)
-                        cv2.circle(frame, (int(right_shoulder[0]+right_y_offset), int(right_shoulder[1]+right_x_offset)), 3, (0, 255, 0), 3)
-                        cv2.circle(frame, (int(center_stomach[0]), int(center_stomach[1])), 3, (0, 255, 0), 3)
                         cv2.imshow('depth', depth_colormap)
                         mp_drawing.draw_landmarks(
                             frame,
@@ -257,21 +257,30 @@ def main(color=(224, 255, 255)):
                             upper_body_yaw, upper_body_pitch, upper_body_roll = upside_body_pose_calculator(left_shoulder, right_shoulder, center_stomach)
                             if upper_body_yaw:
                                 upper_body_yaw = upper_body_yaw * 180 / math.pi
-                                print('yaw_theta', str(upper_body_yaw))
+                                #print('yaw_theta', str(upper_body_yaw))
                                 upper_body_pitch = upper_body_pitch * 180 / math.pi
-                                print('pitch_theta', str(upper_body_pitch))
+                                #print('pitch_theta', str(upper_body_pitch))
                                 upper_body_roll = upper_body_roll * 180 / math.pi
-                                print('roll_theta', str(upper_body_roll))
+                                #print('roll_theta', str(upper_body_roll))
+                                frame = utils.draw_axis(frame, upper_body_yaw, upper_body_pitch, upper_body_roll, [int((left_shoulder[0] + right_shoulder[0])/2), int(left_shoulder[1])],
+                                color1=(255,255,0), color2=(255,0,255), color3=(0,255,255))
 
                     if head_pose_estimation:
-                        print('head pose yaw: ', yaw)
-                        print('head pose pitch: ', pitch)
-                        print('head pose roll: ', roll)
+                        #print('head pose yaw: ', yaw)
+                        #print('head pose pitch: ', pitch)
+                        #print('head pose roll: ', roll)
+                        frame = utils.draw_axis(frame, yaw, pitch, roll, [int((face_boxes[0][0] + face_boxes[0][2])/2), int(face_boxes[0][1] - 30)])
 
-                    if gaze_estimation:
-                        for i in range(len(left_eye_boxes)):
-                            cv2.rectangle(frame, (int(left_eye_boxes[i][0]), int(left_eye_boxes[i][1])), (int(left_eye_boxes[i][2]), int(left_eye_boxes[i][3])), (255, 255, 0), 1)
-                            cv2.rectangle(frame, (int(right_eye_boxes[i][0]), int(right_eye_boxes[i][1])), (int(right_eye_boxes[i][2]), int(right_eye_boxes[i][3])), (0, 255, 0), 1)
+                    if text_visualization:
+                        text_room = np.ones((height, width, 3)) * 255
+                        if body_pose_estimation:
+                            cv2.putText(text_room, '[Positions] ', (int(width/10), int(height/10)), cv2.FONT_HERSHEY_PLAIN, 5, (0, 255, 0), 2, cv2.LINE_AA)
+                            cv2.putText(text_room, '[ Yaw  : ] '+str(upper_body_yaw), (int(width/10), int(height/10)*2), cv2.FONT_HERSHEY_PLAIN, 3, (0, 255, 0), 2, cv2.LINE_AA)
+                            cv2.putText(text_room, '[Pitch  :] '+str(upper_body_pitch), (int(width/10), int(height/10)*3), cv2.FONT_HERSHEY_PLAIN, 3, (0, 255, 0), 2, cv2.LINE_AA)
+                            cv2.putText(text_room, '[ Roll  :] '+str(upper_body_roll), (int(width/10), int(height/10)*4), cv2.FONT_HERSHEY_PLAIN, 3, (0, 255, 0), 2, cv2.LINE_AA)
+                        cv2.imshow('text', text_room)
+
+
                     # Flip the image horizontally for a selfie-view display.
                     cv2.imshow('MediaPipe Pose', frame)
 

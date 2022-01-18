@@ -102,16 +102,10 @@ class BaseTFLiteFaceAlignment():
         for box in detected_faces:
             if box[2] - box[0] < 100:
                 continue
-            start_time = time.time()
             inp, M = self._preprocessing(image, box)
-            print('preprocessing_time is ', time.time() - start_time)
-            start_time = time.time()
             self._inference(inp)
-            print('inference_time is ', time.time() - start_time)
 
-            start_time = time.time()
             yield self._postprocessing(M)
-            print('post_time is ', time.time() - start_time)
 
 
 class DenseFaceReconstruction(BaseTFLiteFaceAlignment):
