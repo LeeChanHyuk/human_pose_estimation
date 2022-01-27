@@ -39,7 +39,7 @@ def estimate_gaze_from_face_image(orig_frame, frame, face_coordinate, left_eye_b
     eye_boxes = np.concatenate([right_eye_boxes, left_eye_boxes], axis=0)
     current_face = None
     landmarks = None
-    alpha = 0.95
+    alpha = 1
     left_eye = None
     right_eye = None
     faces = face_coordinate
@@ -72,20 +72,8 @@ def estimate_gaze_from_face_image(orig_frame, frame, face_coordinate, left_eye_b
             left_eye = smooth_eye_landmarks(left_eyes[0], left_eye, smoothing=0.1)
         if right_eyes:
             right_eye = smooth_eye_landmarks(right_eyes[0], right_eye, smoothing=0.1)
-        if visualization:
-            for ep in [left_eye, right_eye]:
-                for (x, y) in ep.landmarks[16:33]:
-                    color = (0, 255, 0)
-                    if ep.eye_sample.is_left:
-                        color = (255, 0, 0)
-                    cv2.circle(frame,
-                                (int(round(x)), int(round(y))), 1, color, -1, lineType=cv2.LINE_AA)
-
-                gaze = ep.gaze.copy()
-                if ep.eye_sample.is_left:
-                    gaze[1] = -gaze[1]
-                util.gaze.draw_gaze(frame, ep.landmarks[-2], gaze, length=60.0, thickness=2)
-    return frame
+        eyes = [left_eye, right_eye]
+    return frame, eyes
 
 
 def detect_landmarks(face, frame, scale_x=0, scale_y=0):

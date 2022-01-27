@@ -13,6 +13,7 @@ import math
 from ssl import ALERT_DESCRIPTION_NO_RENEGOTIATION
 from turtle import right
 import head_pose_estimation_module.service as service
+from gaze_estimation_module.util.gaze import draw_gaze
 from gaze_estimation_module.gaze_estimation import estimate_gaze_from_face_image
 import cv2
 import time
@@ -21,6 +22,7 @@ import mediapipe as mp
 import numpy as np
 import pyrealsense2 as rs
 import utils
+import visualization_tool
 
 only_detection_mode = False
 
@@ -30,7 +32,7 @@ mp_pose = mp.solutions.pose
 mp_face_detection = mp.solutions.face_detection
 mp_face_mesh = mp.solutions.face_mesh
 visualization = True
-text_visualization = False
+text_visualization = True
 body_pose_estimation = True 
 head_pose_estimation = True # 12 프레임 저하
 gaze_estimation = True # 22프레임 저하
@@ -207,7 +209,7 @@ def main(color=(224, 255, 255)):
 
                     # Estimate gaze
                     if gaze_estimation:
-                        frame = estimate_gaze_from_face_image(feed, frame, face_boxes, left_eye_boxes, right_eye_boxes, visualization)
+                        frame, gazes = estimate_gaze_from_face_image(feed, frame, face_boxes, left_eye_boxes, right_eye_boxes, visualization)
 
                 if body_pose_estimation:
                     # Estimate body pose
@@ -244,7 +246,7 @@ def main(color=(224, 255, 255)):
                     # apply colormap to depthmap
                     depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth, alpha=0.03), cv2.COLORMAP_JET)
 
-                    if body_pose_estimation:
+                    if body_pose_estimation and results.pose_landmarks:
                         cv2.circle(depth_colormap, (int(left_shoulder[0]-left_y_offset), int(left_shoulder[1]+left_x_offset)), 3, (0, 255, 0), 3)
                         cv2.circle(depth_colormap, (int(right_shoulder[0]+right_y_offset), int(right_shoulder[1]+right_x_offset)), 3, (0, 255, 0), 3)
                         cv2.imshow('depth', depth_colormap)
@@ -265,24 +267,36 @@ def main(color=(224, 255, 255)):
                                 frame = utils.draw_axis(frame, upper_body_yaw, upper_body_pitch, upper_body_roll, [int((left_shoulder[0] + right_shoulder[0])/2), int(left_shoulder[1])],
                                 color1=(255,255,0), color2=(255,0,255), color3=(0,255,255))
 
-                    if head_pose_estimation:
+                    if head_pose_estimation and yaw:
                         #print('head pose yaw: ', yaw)
                         #print('head pose pitch: ', pitch)
                         #print('head pose roll: ', roll)
                         frame = utils.draw_axis(frame, yaw, pitch, roll, [int((face_boxes[0][0] + face_boxes[0][2])/2), int(face_boxes[0][1] - 30)])
 
                     if text_visualization:
-                        text_room = np.ones((height, width, 3)) * 255
-                        if body_pose_estimation:
-                            cv2.putText(text_room, '[Positions] ', (int(width/10), int(height/10)), cv2.FONT_HERSHEY_PLAIN, 5, (0, 255, 0), 2, cv2.LINE_AA)
-                            cv2.putText(text_room, '[ Yaw  : ] '+str(upper_body_yaw), (int(width/10), int(height/10)*2), cv2.FONT_HERSHEY_PLAIN, 3, (0, 255, 0), 2, cv2.LINE_AA)
-                            cv2.putText(text_room, '[Pitch  :] '+str(upper_body_pitch), (int(width/10), int(height/10)*3), cv2.FONT_HERSHEY_PLAIN, 3, (0, 255, 0), 2, cv2.LINE_AA)
-                            cv2.putText(text_room, '[ Roll  :] '+str(upper_body_roll), (int(width/10), int(height/10)*4), cv2.FONT_HERSHEY_PLAIN, 3, (0, 255, 0), 2, cv2.LINE_AA)
-                        cv2.imshow('text', text_room)
+                        width = int(width * 1.5)
+                        zero_array = np.zeros((height, width, 3), dtype=np.uint8)
+                        if body_pose_estimation and results.pose_landmarks:
+                            center_shoulder = (left_shoulder + right_shoulder) / 2
+                            zero_array= visualization_tool.draw_body_information(zero_array, width, height, round(center_shoulder[0], 2), round(center_shoulder[1], 2), round(center_shoulder[2], 2), 
+                            round(upper_body_yaw, 2), round(upper_body_pitch, 2), round(upper_body_roll, 2))
+                        if head_pose_estimation and yaw:
+                            face_center_x = (face_boxes[0][0] + face_boxes[0][2]) / 2
+                            face_center_y = (face_boxes[0][1] + face_boxes[0][3]) / 2
+                            face_center_z = depth[int(face_center_y), int(face_center_x)]
+                            zero_array = visualization_tool.draw_face_information(zero_array, width, height, round(face_center_x, 2), round(face_center_y, 2), round(face_center_z, 2), round(yaw, 2)
+                            , round(pitch, 2), round(roll, 2))
+                        if gaze_estimation and gazes:
+                            center_eye_x = (left_eye_inner_x1 + left_eye_inner_x2) / 2
+                            center_eye_y = (left_eye_inner_y1 + left_eye_inner_y2) / 2
+                            center_eye_z = depth[int(center_eye_y), int(center_eye_x)]
+                            zero_array = visualization_tool.draw_gaze_information(zero_array,width, height, round(center_eye_x, 2), round(center_eye_y, 2), round(center_eye_z, 2), gazes)
+                        stacked_frame = np.concatenate([frame, zero_array], axis=1)
 
 
                     # Flip the image horizontally for a selfie-view display.
-                    cv2.imshow('MediaPipe Pose', frame)
+                    #cv2.imshow('MediaPipe Pose1', frame)
+                    cv2.imshow('MediaPipe Pose2', stacked_frame)
 
                     # Check the FPS
                     print('fps = ', 1/(time.time() - start_time))

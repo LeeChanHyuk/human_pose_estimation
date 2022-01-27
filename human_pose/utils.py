@@ -2,7 +2,7 @@ from math import *
 import cv2
 import numpy as np
 
-def draw_axis(img, yaw, pitch, roll, visualization_point, size = 50, color1=(0,0,255), color2=(0,255,0), color3=(0,0,255)):
+def draw_axis(img, yaw, pitch, roll, visualization_point, size = 50, color1=(255,0,0), color2=(0,255,0), color3=(0,0,255)):
     pitch = (pitch * np.pi / 180)
     yaw = -(yaw * np.pi / 180)
     roll = (roll * np.pi / 180)
