@@ -29,8 +29,8 @@ def draw_face_information(zero_array, width, height, x, y, z, yaw, pitch, roll):
 	return zero_array
 
 def draw_gaze_information(zero_array, width, height, x, y, z, gazes): # [width, height, x, y, z, x, y]
-	left_gaze = gazes[0]
-	right_gaze = gazes[1]
+	left_gaze = gazes[1]
+	right_gaze = gazes[0]
 	draw_gaze(zero_array, ((width/40) * 32, (height/20) * 1.5), left_gaze, length=60.0, thickness=2)
 	draw_gaze(zero_array, ((width/40) * 34, (height/20) * 1.5), right_gaze, length=60.0, thickness=2)
 	cv2.putText(zero_array, '[Eye position]:', (int((width/40) * 29), int((height/20) * 6)), 1, 2, (0, 0, 255), 3)
@@ -38,8 +38,8 @@ def draw_gaze_information(zero_array, width, height, x, y, z, gazes): # [width, 
 	cv2.putText(zero_array, ' Y :' + str(y), (int((width/40) * 29), int((height/20) * 9)), 1, 1.8, (255, 255, 0), 3)
 	cv2.putText(zero_array, ' Z :' + str(z), (int((width/40) * 29), int((height/20) * 10.5)), 1, 1.8, (255, 255, 0), 3)
 	cv2.putText(zero_array, '[Eye pose]:', (int((width/40) * 29), int((height/20) * 13)), 1, 2, (0, 0, 255), 3)
-	cv2.putText(zero_array, ' Left_y :' + str(round(left_gaze[0], 2)), (int((width/40) * 29), int((height/20) * 14.5)), 1, 1.8, (255, 255, 0), 3)
 	cv2.putText(zero_array, ' Left_x:' + str(round(left_gaze[1], 2)), (int((width/40) * 29), int((height/20) * 16)), 1, 1.8, (255, 255, 0), 3)
-	cv2.putText(zero_array, ' Right_y:' + str(round(right_gaze[0], 2)), (int((width/40) * 29), int((height/20) * 17.5)), 1, 1.8, (255, 255, 0), 3)
+	cv2.putText(zero_array, ' Left_y :' + str(round(left_gaze[0], 2)), (int((width/40) * 29), int((height/20) * 14.5)), 1, 1.8, (255, 255, 0), 3)
 	cv2.putText(zero_array, ' Right_x:' + str(round(right_gaze[1], 2)), (int((width/40) * 29), int((height/20) * 19)), 1, 1.8, (255, 255, 0), 3)
+	cv2.putText(zero_array, ' Right_y:' + str(round(right_gaze[0], 2)), (int((width/40) * 29), int((height/20) * 17.5)), 1, 1.8, (255, 255, 0), 3)
 	return zero_array

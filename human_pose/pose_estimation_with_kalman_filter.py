@@ -251,15 +251,14 @@ def main(color=(224, 255, 255)):
                         left_gaze[1] = -left_gaze[1]
                         right_gaze = right_eye.gaze.copy()
                         gazes = [left_gaze, right_gaze]
-                        left_dx = np.sin(left_gaze[1])
-                        right_dx = np.sin(right_gaze[1])
+                        right_dx = np.sin(left_gaze[0])
+                        left_dx = np.sin(right_gaze[0])
 
                         # The eyes must be convergence in anytime
-                        if abs(left_dx) < abs(right_dx) and left_dx < 0 and right_dx > 0:
-                            gazes[0][1] *= -1
-                        if abs(left_dx) > abs(right_dx) and left_dx < 0 and right_dx > 0:
-                            gazes[1][1] *= -1
-                            
+                        #if left_dx < 0 and right_dx > 0:
+                        #    gazes[0][1] *= -1
+                        #    gazes[1][1] *= -1
+
                         left_eye_pose_stabilizers[0].update([gazes[0][0]]) # left eye x coordinate
                         left_eye_pose_stabilizers[1].update([gazes[0][1]]) # left eye y coordinate
                         right_eye_pose_stabilizers[0].update([gazes[1][0]]) # right eye x coordinate
