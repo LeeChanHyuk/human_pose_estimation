@@ -32,11 +32,11 @@ mp_drawing_styles = mp.solutions.drawing_styles
 mp_pose = mp.solutions.pose
 mp_face_detection = mp.solutions.face_detection
 mp_face_mesh = mp.solutions.face_mesh
-visualization = True
-text_visualization = True
-body_pose_estimation = True 
+visualization = False
+text_visualization = False
+body_pose_estimation = False
 head_pose_estimation = True # 12 프레임 저하
-gaze_estimation = True # 22프레임 저하
+gaze_estimation = False # 22프레임 저하
 
 
 
@@ -112,6 +112,8 @@ def upside_body_pose_calculator(left_shoulder, right_shoulder, center_hip):
 
 def main(color=(224, 255, 255)):
     base_path = os.getcwd()
+    head_pose_txt = open('head_pose.txt', 'w')
+    state = 'N'
     
     # Initialization step
     fa = service.DepthFacialLandmarks(os.path.join(base_path, "head_pose_estimation_module/weights/sparse_face.tflite"))
@@ -190,6 +192,8 @@ def main(color=(224, 255, 255)):
                 # Convert images to numpy arrays
                 depth = np.array(depth.get_data())
                 frame = np.array(frame.get_data())
+                cv2.imshow('frame', frame)
+                cv2.waitKey(1)
                 if depth.shape != frame.shape:
                     frame = cv2.resize(frame, dsize=(depth.shape[1], depth.shape[0]), interpolation=cv2.INTER_AREA)
 
@@ -241,6 +245,9 @@ def main(color=(224, 255, 255)):
                             pitch = head_pose_stabilizers[0].state[0][0]
                             yaw = head_pose_stabilizers[1].state[0][0]
                             roll = head_pose_stabilizers[2].state[0][0]
+                            line = str(yaw)+' '+str(pitch) + ' ' + str(roll) + ' ' + state + '\n'
+                            head_pose_txt.write(line)
+                            
 
 
                     # Estimate gaze
@@ -259,10 +266,10 @@ def main(color=(224, 255, 255)):
                         #    gazes[0][1] *= -1
                         #    gazes[1][1] *= -1
 
-                        left_eye_pose_stabilizers[0].update([gazes[0][0]]) # left eye x coordinate
-                        left_eye_pose_stabilizers[1].update([gazes[0][1]]) # left eye y coordinate
-                        right_eye_pose_stabilizers[0].update([gazes[1][0]]) # right eye x coordinate
-                        right_eye_pose_stabilizers[1].update([gazes[1][1]]) # right eye y coordinate
+                        left_eye_pose_stabilizers[0].update([gazes[0][0]]) # left eye y coordinate
+                        left_eye_pose_stabilizers[1].update([gazes[0][1]]) # left eye x coordinate
+                        right_eye_pose_stabilizers[0].update([gazes[1][0]]) # right eye y coordinate
+                        right_eye_pose_stabilizers[1].update([gazes[1][1]]) # right eye x coordinate
                         left_x = left_eye_pose_stabilizers[0].state[0][0]
                         left_y = left_eye_pose_stabilizers[1].state[0][0]
                         right_x = right_eye_pose_stabilizers[0].state[0][0]
@@ -337,7 +344,7 @@ def main(color=(224, 255, 255)):
                         #print('head pose roll: ', roll)
                         frame = utils.draw_axis(frame, yaw, pitch, roll, [int((face_boxes[0][0] + face_boxes[0][2])/2), int(face_boxes[0][1] - 30)])
                     
-                    if gaze_estimation and left_eye:
+                    if gaze_estimation:
                         for i, ep in enumerate([left_eye, right_eye]):
                             for (x, y) in ep.landmarks[16:33]:
                                 color = (0, 255, 0)
@@ -375,13 +382,24 @@ def main(color=(224, 255, 255)):
                     cv2.imshow('MediaPipe Pose2', stacked_frame)
 
                     # Check the FPS
-                    #print('fps = ', 1/(time.time() - start_time))
-                    if cv2.waitKey(5) & 0xFF == 27:
-                        break
+                print('fps = ', 1/(time.time() - start_time))
+                pressed_key = cv2.waitKey(1)
+                if pressed_key == 27:
+                    break
+                elif pressed_key == ord('n'):
+                    state = 'N'
+                elif pressed_key == ord('y'):
+                    state = 'Y'
+                elif pressed_key == ord('p'):
+                    state = 'P'
+                elif pressed_key == ord('r'):
+                    state = 'R'
             #except Exception as e:
             #    print('Error is occurred')
             #    print(e)
             #    pass
+
+    head_pose_txt.close()
 
 if __name__ == "__main__":
     main()
