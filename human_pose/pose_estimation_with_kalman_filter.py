@@ -112,7 +112,12 @@ def upside_body_pose_calculator(left_shoulder, right_shoulder, center_hip):
 
 def main(color=(224, 255, 255)):
     base_path = os.getcwd()
-    head_pose_txt = open('head_pose.txt', 'w')
+    pose_txt_name = 'head_pose_'
+    count = 0
+    while os.path.exists(os.path.join(base_path, pose_txt_name + str(count))):
+        count += 1
+    pose_txt_name = pose_txt_name + str(count)
+    head_pose_txt = open(pose_txt_name, 'w')
     state = 'N'
     
     # Initialization step
