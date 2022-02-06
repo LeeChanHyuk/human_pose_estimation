@@ -32,6 +32,7 @@ mp_drawing_styles = mp.solutions.drawing_styles
 mp_pose = mp.solutions.pose
 mp_face_detection = mp.solutions.face_detection
 mp_face_mesh = mp.solutions.face_mesh
+use_realsense = False
 visualization = False
 text_visualization = False
 body_pose_estimation = False
@@ -171,32 +172,39 @@ def main(color=(224, 255, 255)):
             #try:
             print('Camera settings is started')
             # Create a context object. This object owns the handles to all connected realsense devices
-            pipeline = rs.pipeline()
+            if use_realsense:
+                pipeline = rs.pipeline()
 
-            # Configure streams
-            config = rs.config()
-            config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-            config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+                # Configure streams
+                config = rs.config()
+                config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+                config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 
-            # Start streaming
-            pipeline.start(config)
+                # Start streaming
+                pipeline.start(config)
+            else:
+                cap = cv2.VideoCapture(0)
 
             print('Camera settings is initialized')
 
             # Load the frame from webcam
             while True:
                 start_time = time.time()
-                frames = pipeline.wait_for_frames()
-                align_frames = align.process(frames)
-                frame = align_frames.get_color_frame()
-                depth = align_frames.get_depth_frame()
-                if not depth or not frame:
-                    print('Preparing camera')
-                    continue
+                if use_realsense:
+                    frames = pipeline.wait_for_frames()
+                    align_frames = align.process(frames)
+                    frame = align_frames.get_color_frame()
+                    depth = align_frames.get_depth_frame()
+                    if not depth or not frame:
+                        print('Preparing camera')
+                        continue
 
-                # Convert images to numpy arrays
-                depth = np.array(depth.get_data())
-                frame = np.array(frame.get_data())
+                    # Convert images to numpy arrays
+                    depth = np.array(depth.get_data())
+                    frame = np.array(frame.get_data())
+                else:
+                    ret, frame = cap.read()
+                    depth = np.zeros(frame.shape)
                 cv2.imshow('frame', frame)
                 cv2.waitKey(1)
                 if depth.shape != frame.shape:

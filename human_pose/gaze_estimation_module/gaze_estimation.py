@@ -8,11 +8,8 @@ from gaze_estimation_module.models.eyenet import EyeNet
 import os
 import numpy as np
 import cv2
-import dlib
-import imutils
 from gaze_estimation_module import util
 import gaze_estimation_module.util.gaze
-from imutils import face_utils
 import time
 
 from gaze_estimation_module.util.eye_prediction import EyePrediction
@@ -25,7 +22,6 @@ print(device)
 
 dirname = os.path.dirname(__file__)
 face_cascade = cv2.CascadeClassifier(os.path.join(dirname, 'lbpcascade_frontalface_improved.xml'))
-landmarks_detector = dlib.shape_predictor(os.path.join(dirname, 'shape_predictor_5_face_landmarks.dat'))
 print(dirname)
 checkpoint = torch.load(os.path.join(dirname, 'checkpoint.pt'), map_location=device)
 nstack = checkpoint['nstack']
@@ -75,12 +71,6 @@ def estimate_gaze_from_face_image(orig_frame, frame, face_coordinate, left_eye_b
         eyes = [left_eye, right_eye]
     return frame, eyes
 
-
-def detect_landmarks(face, frame, scale_x=0, scale_y=0):
-    (x, y, w, h) = (int(e) for e in face)
-    rectangle = dlib.rectangle(x, y, x + w, y + h)
-    face_landmarks = landmarks_detector(frame, rectangle)
-    return face_utils.shape_to_np(face_landmarks)
 
 
 def draw_cascade_face(face, frame):

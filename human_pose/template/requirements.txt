@@ -1,0 +1,14 @@
+hydra-core
+git+https://github.com/ildoonet/pytorch-gradual-warmup-lr.git
+scikit-learn
+tqdm
+pandas
+tensorboard
+seaborn
+scikit-image==0.18.3
+scikit-learn
+hydra-core
+efficientnet_pytorch
+timm
+segmentation_models_pytorch
+albumentations==1.0.3
