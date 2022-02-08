@@ -32,11 +32,15 @@ mp_drawing_styles = mp.solutions.drawing_styles
 mp_pose = mp.solutions.pose
 mp_face_detection = mp.solutions.face_detection
 mp_face_mesh = mp.solutions.face_mesh
-use_realsense = False
+
+
+use_realsense = True
+use_video = False
+annotation = False
 visualization = False
 text_visualization = False
 body_pose_estimation = False
-head_pose_estimation = True # 12 프레임 저하
+head_pose_estimation = False # 12 프레임 저하
 gaze_estimation = False # 22프레임 저하
 
 
@@ -113,13 +117,14 @@ def upside_body_pose_calculator(left_shoulder, right_shoulder, center_hip):
 
 def main(color=(224, 255, 255)):
     base_path = os.getcwd()
-    pose_txt_name = 'head_pose_'
-    count = 0
-    while os.path.exists(os.path.join(base_path, pose_txt_name + str(count))):
-        count += 1
-    pose_txt_name = pose_txt_name + str(count)
-    head_pose_txt = open(pose_txt_name, 'w')
-    state = 'N'
+    if annotation:
+        pose_txt_name = 'head_pose_'
+        count = 0
+        while os.path.exists(os.path.join(base_path, pose_txt_name + str(count))):
+            count += 1
+        pose_txt_name = pose_txt_name + str(count)
+        head_pose_txt = open(pose_txt_name, 'w')
+        state = 'N'
     
     # Initialization step
     fa = service.DepthFacialLandmarks(os.path.join(base_path, "head_pose_estimation_module/weights/sparse_face.tflite"))
@@ -352,9 +357,9 @@ def main(color=(224, 255, 255)):
                                 color1=(255,255,0), color2=(255,0,255), color3=(0,255,255))
 
                     if head_pose_estimation and yaw:
-                        #print('head pose yaw: ', yaw)
-                        #print('head pose pitch: ', pitch)
-                        #print('head pose roll: ', roll)
+                        print('head pose yaw: ', yaw)
+                        print('head pose pitch: ', pitch)
+                        print('head pose roll: ', roll)
                         frame = utils.draw_axis(frame, yaw, pitch, roll, [int((face_boxes[0][0] + face_boxes[0][2])/2), int(face_boxes[0][1] - 30)])
                     
                     if gaze_estimation:
@@ -395,24 +400,29 @@ def main(color=(224, 255, 255)):
                     cv2.imshow('MediaPipe Pose2', stacked_frame)
 
                     # Check the FPS
-                print('fps = ', 1/(time.time() - start_time))
+                #print('fps = ', 1/(time.time() - start_time))
                 pressed_key = cv2.waitKey(1)
-                if pressed_key == 27:
-                    break
-                elif pressed_key == ord('n'):
-                    state = 'N'
-                elif pressed_key == ord('y'):
-                    state = 'Y'
-                elif pressed_key == ord('p'):
-                    state = 'P'
-                elif pressed_key == ord('r'):
-                    state = 'R'
+                if annotation:
+                    if pressed_key == 27:
+                        break
+                    elif pressed_key == ord('n'):
+                        state = 'N'
+                    elif pressed_key == ord('y'):
+                        state = 'Y'
+                    elif pressed_key == ord('p'):
+                        state = 'P'
+                    elif pressed_key == ord('r'):
+                        state = 'R'
+                else:
+                    if pressed_key == 27:
+                        break
+
             #except Exception as e:
             #    print('Error is occurred')
             #    print(e)
             #    pass
-
-    head_pose_txt.close()
+    if annotation:
+        head_pose_txt.close()
 
 if __name__ == "__main__":
     main()
