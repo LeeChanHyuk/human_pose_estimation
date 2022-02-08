@@ -4,6 +4,7 @@ import sys
 import logging
 import datetime
 import random
+from matplotlib.pyplot import axis
 import numpy as np
 import copy
 import argparse
@@ -130,10 +131,15 @@ class Trainer():
         train_total = 0
         one_epoch_loss = 0
         # eval_result = [accuracy, precision, recall, loss, image_num]
-        t_acc = np.zeros(1)
-        t_iou = np.zeros(1)
-        t_loss = np.zeros(1)
-        t_imgnum = np.zeros(1)
+        t_loss = 0
+        t_imgnum = 0
+        accuracy = 0
+        recall = 0
+        precision = 0
+        TN = 0
+        TP = 0
+        FN = 0
+        FP = 0
 
         #torch.set_default_tensor_type(torch.cuda.LONG)
         model.train()
@@ -153,23 +159,12 @@ class Trainer():
             with self.amp_autocast():
                 input = image
                 y_pred = model(input)
-                #if len(y_pred.shape) == 4:
-                #    y_pred = torch.argmax(y_pred, dim=1)
-                #else:
-                #    y_pred = torch.argmax(y_pred, dim=0)
-                if len(y_pred.shape) != len(label.shape):
-                    if len(y_pred.shape) > len(label.shape):
-                        label = torch.unsqueeze(label, dim=1)
-                    else:
-                        y_pred = torch.unsqueeze(y_pred, dim=1)
-                #y_pred = torch.argmax(y_pred, dim=1)[None,:]
-                #label = F.one_hot(label.to(torch.int64), num_classes=10)
+                
                 y_pred = y_pred.to(torch.float)
-                label = label.to(torch.int64)
+                label = label.to(torch.long)
                 loss = criterion(y_pred, label).float()
                 #loss.requires_grad = True
             optimizer.zero_grad(set_to_none=True)
-            t_imgnum += y_pred[0]
             
             if self.scaler is None:
                 loss.backward()
@@ -180,40 +175,38 @@ class Trainer():
                 self.scaler.update()
             y_pred = y_pred.detach().cpu().numpy()
             label = label.detach().cpu().numpy()
+            t_imgnum += y_pred.shape[0]
+            t_loss += loss.item()
+            y_pred = np.argmax(y_pred, axis=1)
             y_pred = np.around(y_pred)
-            TN = 0
-            TP = 0
-            FN = 0
-            FP = 0
             for i in range(len(y_pred)):
-                if y_pred[i] == 0 and label == 0:
+                if y_pred[i] == 0 and label[i] == 0:
                     TN += 1
-                elif y_pred[i] == 0 and label >= 1:
+                elif y_pred[i] == 0 and label[i] >= 1:
                     FN += 1
-                elif y_pred[i] >= 1 and label == 0:
+                elif y_pred[i] >= 1 and label[i] == 0:
                     FP += 1
-                elif y_pred[i] == 1 and label == 1:
+                elif y_pred[i] == 1 and label[i] == 1:
                     TP += 1
-                elif y_pred[i] == 2 and label == 2:
+                elif y_pred[i] == 2 and label[i] == 2:
                     TP += 1
-            accuracy = (TP + TN) / (TP + TN + FP + FN)
-            recall = (TP) / (TP + FN)
-            precision = (TP) / (TP + FP)
 
             if step % 100 == 0:
+                accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
+                recall = (TP) / (TP + FN + 0.000001)
+                precision = (TP) / (TP + FP + 0.000001)
                 pbar.set_postfix({'train_Acc':accuracy, 'recall':recall, 'precision':precision, 'train_Loss':round(loss.item(),2)})
         
         #torch.distributed.reduce(counter, 0)
         if self.is_master:
+            accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
+            recall = (TP) / (TP + FN + 0.000001)
+            precision = (TP) / (TP + FP + 0.000001)
             metric = {'Acc': accuracy, 'Loss': t_loss / t_imgnum,'optimizer':optimizer}
             self.writer.add_scalar("Loss/train", t_loss / t_imgnum, epoch)
             self.writer.add_scalar("ACC/train", accuracy, epoch)
-            self.writer.add_scalar('Recall/train', recall/t_imgnum)
-            self.writer.add_scalar('Precision/train', precision/t_imgnum)
-            logger.update_log(metric,current_step,'train') # update logger step
-            logger.update_histogram(model,current_step,'train') # update weight histogram 
-            logger.update_image(image,current_step,'train') # update transpose image
-            logger.update_metric()
+            self.writer.add_scalar('Recall/train', recall, epoch)
+            self.writer.add_scalar('Precision/train', precision, epoch)
             self.writer.flush()
         # return loss, accuracy
         #return t_loss / t_imgnum, t_acc / t_imgnum, t_iou / t_imgnum, dl
@@ -233,10 +226,15 @@ class Trainer():
             disable=not self.is_master
             ) # set progress bar
         current_step = epoch
-        t_acc = np.zeros(1)
-        t_iou = np.zeros(1)
-        t_loss = np.zeros(1)
-        t_imgnum = np.zeros(1)
+        t_loss = 0
+        t_imgnum = 0
+        accuracy = 0
+        recall = 0
+        precision = 0
+        TN = 0
+        TP = 0
+        FN = 0
+        FP = 0
 
         for step, (image, label) in pbar:
             image = image.to(device=self.rank, non_blocking=True).float()
@@ -244,51 +242,42 @@ class Trainer():
             with self.amp_autocast():
                 input = image
                 y_pred = model(input)
-                if len(y_pred.shape) != len(label.shape):
-                    if len(y_pred.shape) > len(label.shape):
-                        label = torch.unsqueeze(label, dim=1)
-                    else:
-                        y_pred = torch.unsqueeze(y_pred, dim=1)
                 y_pred = y_pred.to(torch.float)
-                label = label.to(torch.int64)
+                label = label.to(torch.long)
                 loss = criterion(y_pred, label).float()
-                #loss.requires_grad = False
             y_pred = y_pred.detach().cpu().numpy()
             label = label.detach().cpu().numpy()
+            t_imgnum += y_pred.shape[0]
+            t_loss += loss.item()
+            y_pred = np.argmax(y_pred, axis=1)
             y_pred = np.around(y_pred)
-            TN = 0
-            TP = 0
-            FN = 0
-            FP = 0
             for i in range(len(y_pred)):
-                if y_pred[i] == 0 and label == 0:
+                if y_pred[i] == 0 and label[i] == 0:
                     TN += 1
-                elif y_pred[i] == 0 and label >= 1:
+                elif y_pred[i] == 0 and label[i] >= 1:
                     FN += 1
-                elif y_pred[i] >= 1 and label == 0:
+                elif y_pred[i] >= 1 and label[i] == 0:
                     FP += 1
-                elif y_pred[i] == 1 and label == 1:
+                elif y_pred[i] == 1 and label[i] == 1:
                     TP += 1
-                elif y_pred[i] == 2 and label == 2:
+                elif y_pred[i] == 2 and label[i] == 2:
                     TP += 1
-            accuracy = (TP + TN) / (TP + TN + FP + FN)
-            recall = (TP) / (TP + FN)
-            precision = (TP) / (TP + FP)
 
             if step % 100 == 0:
-                pbar.set_postfix({'train_Acc':accuracy, 'recall':recall, 'precision':precision, 'train_Loss':round(loss.item(),2)})
+                accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
+                recall = (TP) / (TP + FN + 0.000001)
+                precision = (TP) / (TP + FP + 0.000001)
+                pbar.set_postfix({'Valid_Acc':accuracy, 'recall':recall, 'precision':precision, 'valid_Loss':round(loss.item(),2)})
         
         #torch.distributed.reduce(counter, 0)
         if self.is_master:
-            metric = {'Acc': accuracy, 'Loss': t_loss / t_imgnum,'optimizer':optimizer}
-            self.writer.add_scalar("Loss/train", t_loss / t_imgnum, epoch)
-            self.writer.add_scalar("ACC/train", accuracy, epoch)
-            self.writer.add_scalar('Recall/train', recall/t_imgnum)
-            self.writer.add_scalar('Precision/train', precision/t_imgnum)
-            logger.update_log(metric,current_step,'train') # update logger step
-            logger.update_histogram(model,current_step,'train') # update weight histogram 
-            logger.update_image(image,current_step,'train') # update transpose image
-            logger.update_metric()
+            accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
+            recall = (TP) / (TP + FN + 0.000001)
+            precision = (TP) / (TP + FP + 0.000001)
+            self.writer.add_scalar("Loss/val", t_loss / t_imgnum, epoch)
+            self.writer.add_scalar("ACC/val", accuracy, epoch)
+            self.writer.add_scalar('Recall/val', recall, epoch)
+            self.writer.add_scalar('Precision/val', precision, epoch)
             self.writer.flush()
         # return loss, accuracy
         #return t_loss / t_imgnum, t_acc / t_imgnum, t_iou / t_imgnum, dl
@@ -323,11 +312,11 @@ class Trainer():
         for epoch in range(self.start_epoch, self.conf.hyperparameter.epochs + 1):
             train_sampler.set_epoch(epoch)
             # train
-            train_loss, train_acc, train_iou, train_dl = self.train_one_epoch(epoch, model, train_dl, criterion, optimizer, logger)
+            train_loss, train_acc, train_dl = self.train_one_epoch(epoch, model, train_dl, criterion, optimizer, logger)
             scheduler.step()
 
             # eval
-            valid_loss, valid_acc, valid_iou = self.eval(epoch, model, valid_dl, criterion, logger)
+            valid_loss, valid_acc, valid_dl = self.eval(epoch, model, valid_dl, criterion, logger)
             
             torch.cuda.synchronize()
 
@@ -335,7 +324,7 @@ class Trainer():
             saver.save_checkpoint(epoch=epoch, model=model, loss=train_loss, rank=self.rank, metric=valid_acc)
 
             if self.is_master:
-                print(f'Epoch {epoch}/{self.conf.hyperparameter.epochs} - train_Acc: {train_acc[0]:.3f}, train_Loss: {train_loss[0]:.3f}, valid_Acc: {valid_acc[0]:.3f}, valid_Loss: {valid_loss[0]:.3f}')
+                print(f'Epoch {epoch}/{self.conf.hyperparameter.epochs} - train_Acc: {train_acc:.3f}, train_Loss: {train_loss:.3f}, valid_Acc: {valid_acc:.3f}, valid_Loss: {valid_loss:.3f}')
 
     def test_sample_visualization(self, y_pred, label, num, thresh=0.5):
         y_pred = y_pred.detach().cpu().numpy()
@@ -420,7 +409,7 @@ def set_seed(conf):
         np.random.seed(conf.base.seed)
         torch.manual_seed(conf.base.seed)
         torch.cuda.manual_seed(conf.base.seed)
-        torch.cuda.manual_seed_all(conf.base.seed)  # if use multi-G
+        #torch.cuda.manual_seed_all(conf.base.seed)  # if use multi-G
         torch.backends.cudnn.deterministic = True
 
 

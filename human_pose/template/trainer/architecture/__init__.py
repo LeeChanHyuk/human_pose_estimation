@@ -8,7 +8,7 @@ from efficientnet_pytorch import EfficientNet
 # from .efficientv2 import EffNetV2
 from timm.models import create_model
 import segmentation_models_pytorch as smp
-import lstm
+from . import lstm
 def create(conf, num_classes=None):
     base, architecture_name = [l.lower() for l in conf['type'].split('/')]
     print('model = ',base,architecture_name)
@@ -47,10 +47,9 @@ def create(conf, num_classes=None):
                             bias=False)
         architecture.fc = nn.Linear(2048,1)
     elif base == 'lstm':
-        if architecture_name == 'lstm':
-            architecture = lstm.LSTM(bidirection=False)
-        elif architecture_name == 'bidirectional_lstm':
-            architecture = lstm.LSTM(bidirection=True)
+        architecture = lstm.LSTM(bidirection=False)
+    elif architecture_name == 'bidirectional_lstm':
+        architecture = lstm.LSTM(bidirection=True)
     elif base == 'unet':
         architecture = smp.Unet(
         encoder_name=conf['backbone'],      # choose encoder, e.g. mobilenet_v2 or efficientnet-b7

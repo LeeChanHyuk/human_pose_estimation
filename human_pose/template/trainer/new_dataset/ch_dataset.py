@@ -24,7 +24,7 @@ class ch_dataset(torch.utils.data.Dataset):
         self.data, self.labels = self.get_data()
 
     def __len__(self):
-        return self.length
+        return len(self.data)
 
     def get_data(self):
         data_file_names = os.listdir(self.data_path)
@@ -32,43 +32,47 @@ class ch_dataset(torch.utils.data.Dataset):
         data = []
         labels = []
         neutral = 0
-        yaw = 0
-        pitch = 0
+        yaw_count = 0
+        pitch_count = 0
         sequence_length = 30
+        line_count = 0
         for file in data_file_names:
             f = open(os.path.join(self.data_path, file), 'r')
             while 1:
                 line = f.readline()
                 if not line: break
+                line_count += 1
                 yaw, pitch, roll, label = line.strip().split(' ')
                 yaw, pitch, roll = float(yaw), float(pitch), float(roll)
-                if label == 'N' and (yaw > 0):
-                    motion = yaw - int(yaw / 3)
-                    neutral = yaw - motion
+                if label == 'N' and (yaw_count > 0):
+                    motion = int(yaw_count - int(yaw_count * 2 / 3))
+                    neutral = int(yaw_count - motion)
                     for i in range(neutral):
                         labels.append(0)
                     for i in range(motion):
                         labels.append(1)
-                    yaw = 0
-                elif label == 'N' and (pitch>0):
-                    motion = pitch - int(pitch / 3)
-                    neutral = pitch - motion
+                    yaw_count = 0
+                    labels.append(0)
+                elif label == 'N' and (pitch_count>0):
+                    motion = int(pitch_count - int(pitch_count * 2 / 3))
+                    neutral = int(pitch_count - motion)
                     for i in range(neutral):
                         labels.append(0)
                     for i in range(motion):
                         labels.append(2)
-                    pitch = 0
+                    pitch_count = 0
+                    labels.append(0)
                 elif label == 'Y':
-                    yaw += 1
+                    yaw_count += 1
                 elif label == 'P':
-                    pitch += 1
+                    pitch_count += 1
                 else:
                     labels.append(0)
                 temp_data.append([yaw, pitch, roll])
-            for i in range(len(temp_data) - (sequence_length-1)):
-                data.append(temp_data[i:i+sequence_length])
-            labels = labels[(sequence_length-1):]
-        return np.array(data), np.array(label)
+        for i in range(len(temp_data) - (sequence_length-1)):
+            data.append(temp_data[i:i+sequence_length]) # 1462 / 1433, 3851 + 1462 = 5313 / 5255
+        labels = labels[(sequence_length-1):]
+        return np.array(data), np.array(labels)
                 
 
     # data augmentation is conducted in here because of probability of augmentation method
