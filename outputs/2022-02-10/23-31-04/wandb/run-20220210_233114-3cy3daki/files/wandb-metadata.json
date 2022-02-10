@@ -1,0 +1,24 @@
+{
+    "os": "Linux-4.15.0-167-generic-x86_64-with-debian-buster-sid",
+    "python": "3.7.7",
+    "heartbeatAt": "2022-02-10T14:31:20.477975",
+    "startedAt": "2022-02-10T14:31:14.592640",
+    "docker": null,
+    "gpu": "Quadro T2000",
+    "gpu_count": 1,
+    "cpu_count": 12,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/media/ddl/\uc0c8 \ubcfc\ub968/Git/human_pose_estimation/human_pose/template/train.py",
+    "codePath": "human_pose/template/train.py",
+    "git": {
+        "remote": "https://github.com/LeeChanHyuk/human_pose_estimation.git",
+        "commit": "79435aa8947624c02fe0a75c036defc0fbd9a87a"
+    },
+    "email": "cjsgkcksgur@naver.com",
+    "root": "/media/ddl/\uc0c8 \ubcfc\ub968/Git/human_pose_estimation",
+    "host": "ddl-ThinkPad-P1-Gen-2",
+    "username": "ddl",
+    "executable": "/home/ddl/anaconda3/envs/kaggle/bin/python"
+}

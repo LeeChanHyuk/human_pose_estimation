@@ -1,0 +1,63 @@
+log:
+  type: tensorboard
+  version: board
+  save_parameter: true
+  log_graph: true
+  add_histogram: true
+  on_step: true
+architecture:
+  type: lstm/x
+dataset:
+  train:
+    name: dataset
+    dataset_path: /media/ddl/새 볼륨/Git/human_pose_estimation/human_pose/dataset
+    drop_last: true
+    batch_size: 4
+  valid:
+    name: dataset
+    dataset_path: /media/ddl/새 볼륨/Git/human_pose_estimation/human_pose/dataset
+    drop_last: true
+    batch_size: 4
+  test:
+    name: dataset
+    dataset_path: /media/ddl/새 볼륨/Git/human_pose_estimation/human_pose/dataset
+    drop_last: true
+    batch_size: 4
+loss:
+  type: ce
+optimizer:
+  type: adam
+  params:
+    lr: 0.0001
+    weight_decay: 0.0001
+hyperparameter:
+  epochs: 300
+scheduler:
+  warmup:
+    status: true
+    params:
+      multiplier: 1
+      total_epoch: 10
+  type: CosineAnnealingLR
+  params:
+    T_max: ???
+saver:
+  name: default_saver
+  top_k: 10
+  save_interval: 10
+  standard: metric
+  checkpoint_save_path: ./checkpoint/
+  top_save_path: ./checkpoint/top/
+  checkpoint_save_prefix: checkpoint
+base:
+  world_size: 1
+  use_amp: false
+  mode: train_eval
+  env:
+    mode: gpu
+  seed: '0xC0FFEE'
+  save_dir: ./test
+  resume: false
+  debug: true
+MASTER_ADDR: 127.0.0.3
+MASTER_PORT: '9095'

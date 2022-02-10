@@ -1,0 +1,5 @@
+[default]
+entity = leechanhyuk
+project = action_recognition_with_transformer
+base_url = https://api.wandb.ai
+

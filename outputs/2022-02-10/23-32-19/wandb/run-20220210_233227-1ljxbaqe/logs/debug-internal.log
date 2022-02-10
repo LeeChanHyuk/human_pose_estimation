@@ -1,0 +1,383 @@
+2022-02-10 23:32:29,304 INFO    MainThread:13651 [internal.py:wandb_internal():92] W&B internal server running at pid: 13651, started at: 2022-02-10 23:32:29.304356
+2022-02-10 23:32:29,309 DEBUG   HandlerThread:13651 [handler.py:handle_request():131] handle_request: check_version
+2022-02-10 23:32:29,310 INFO    WriterThread:13651 [datastore.py:open_for_write():77] open: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/run-1ljxbaqe.wandb
+2022-02-10 23:32:29,314 DEBUG   SenderThread:13651 [sender.py:send():235] send: header
+2022-02-10 23:32:29,314 DEBUG   SenderThread:13651 [sender.py:send_request():249] send_request: check_version
+2022-02-10 23:32:29,416 DEBUG   SenderThread:13651 [sender.py:send():235] send: run
+2022-02-10 23:32:29,860 DEBUG   HandlerThread:13651 [handler.py:handle_request():131] handle_request: run_start
+2022-02-10 23:32:29,862 INFO    SenderThread:13651 [dir_watcher.py:__init__():169] watching files in: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files
+2022-02-10 23:32:29,862 INFO    SenderThread:13651 [sender.py:_start_run_threads():812] run started: 1ljxbaqe with start time 1644503547
+2022-02-10 23:32:29,862 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:32:29,863 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:32:30,874 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_created():217] file/dir created: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:32:31,495 DEBUG   HandlerThread:13651 [meta.py:__init__():36] meta init
+2022-02-10 23:32:31,495 DEBUG   HandlerThread:13651 [meta.py:__init__():50] meta init done
+2022-02-10 23:32:31,495 DEBUG   HandlerThread:13651 [meta.py:probe():210] probe
+2022-02-10 23:32:31,505 DEBUG   HandlerThread:13651 [meta.py:_setup_git():200] setup git
+2022-02-10 23:32:31,526 DEBUG   HandlerThread:13651 [meta.py:_setup_git():207] setup git done
+2022-02-10 23:32:31,527 DEBUG   HandlerThread:13651 [meta.py:_save_pip():54] save pip
+2022-02-10 23:32:31,528 DEBUG   HandlerThread:13651 [meta.py:_save_pip():68] save pip done
+2022-02-10 23:32:31,528 DEBUG   HandlerThread:13651 [meta.py:_save_conda():75] save conda
+2022-02-10 23:32:31,869 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_created():217] file/dir created: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/conda-environment.yaml
+2022-02-10 23:32:31,870 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_created():217] file/dir created: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/requirements.txt
+2022-02-10 23:32:34,060 DEBUG   HandlerThread:13651 [meta.py:_save_conda():85] save conda done
+2022-02-10 23:32:34,060 DEBUG   HandlerThread:13651 [meta.py:probe():248] probe done
+2022-02-10 23:32:34,065 DEBUG   SenderThread:13651 [sender.py:send():235] send: files
+2022-02-10 23:32:34,065 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-metadata.json with policy now
+2022-02-10 23:32:34,080 DEBUG   HandlerThread:13651 [handler.py:handle_request():131] handle_request: stop_status
+2022-02-10 23:32:34,082 DEBUG   SenderThread:13651 [sender.py:send_request():249] send_request: stop_status
+2022-02-10 23:32:34,833 DEBUG   SenderThread:13651 [sender.py:send():235] send: run
+2022-02-10 23:32:34,876 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/config.yaml
+2022-02-10 23:32:34,877 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/conda-environment.yaml
+2022-02-10 23:32:34,877 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_created():217] file/dir created: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:32:34,878 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_created():217] file/dir created: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-metadata.json
+2022-02-10 23:32:35,428 INFO    SenderThread:13651 [sender.py:send_run():707] updated run: 1ljxbaqe
+2022-02-10 23:32:35,818 INFO    Thread-17 :13651 [upload_job.py:push():137] Uploaded file /tmp/tmpt1cbq9mqwandb/ipigamaj-wandb-metadata.json
+2022-02-10 23:32:36,879 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:32:38,881 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:32:39,781 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:32:39,781 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:32:39,782 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:32:39,883 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:32:40,885 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:32:42,887 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:32:44,890 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:32:45,130 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:32:45,132 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:32:45,143 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:32:45,892 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:32:46,893 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:32:48,896 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:32:49,932 DEBUG   HandlerThread:13651 [handler.py:handle_request():131] handle_request: stop_status
+2022-02-10 23:32:49,932 DEBUG   SenderThread:13651 [sender.py:send_request():249] send_request: stop_status
+2022-02-10 23:32:50,474 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:32:50,477 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:32:50,480 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:32:50,899 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:32:50,900 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:32:52,902 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:32:54,905 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:32:55,323 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:32:55,325 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:32:55,337 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:32:55,906 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:32:56,907 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:32:58,909 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:32:59,735 DEBUG   SenderThread:13651 [sender.py:send():235] send: stats
+2022-02-10 23:33:00,145 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:33:00,145 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:33:00,148 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:33:00,911 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:00,912 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:33:02,914 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:04,920 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:33:04,922 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:33:04,933 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:33:04,934 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:04,934 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:33:05,171 DEBUG   HandlerThread:13651 [handler.py:handle_request():131] handle_request: stop_status
+2022-02-10 23:33:05,172 DEBUG   SenderThread:13651 [sender.py:send_request():249] send_request: stop_status
+2022-02-10 23:33:06,936 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:08,939 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:09,869 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:33:09,872 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:33:09,883 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:33:09,941 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:33:10,942 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:12,945 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:14,843 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:33:14,846 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:33:14,857 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:33:14,948 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:14,948 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:33:16,950 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:18,954 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:20,088 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:33:20,089 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:33:20,091 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:33:20,394 DEBUG   HandlerThread:13651 [handler.py:handle_request():131] handle_request: stop_status
+2022-02-10 23:33:20,395 DEBUG   SenderThread:13651 [sender.py:send_request():249] send_request: stop_status
+2022-02-10 23:33:20,957 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:20,957 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:33:22,959 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:24,962 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:33:24,964 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:33:24,966 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:33:24,976 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:24,976 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:33:26,978 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:28,981 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:29,972 DEBUG   SenderThread:13651 [sender.py:send():235] send: stats
+2022-02-10 23:33:30,391 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:33:30,393 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:33:30,400 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:33:30,985 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:30,986 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:33:32,988 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:34,991 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:35,797 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:33:35,798 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:33:35,809 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:33:35,897 DEBUG   HandlerThread:13651 [handler.py:handle_request():131] handle_request: stop_status
+2022-02-10 23:33:35,897 DEBUG   SenderThread:13651 [sender.py:send_request():249] send_request: stop_status
+2022-02-10 23:33:35,993 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:33:36,994 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:38,997 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:40,906 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:33:40,907 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:33:40,909 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:33:41,000 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:41,000 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:33:43,002 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:45,005 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:45,973 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:33:45,975 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:33:45,986 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:33:46,007 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:33:47,008 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:49,011 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:51,014 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:51,116 DEBUG   HandlerThread:13651 [handler.py:handle_request():131] handle_request: stop_status
+2022-02-10 23:33:51,116 DEBUG   SenderThread:13651 [sender.py:send_request():249] send_request: stop_status
+2022-02-10 23:33:52,197 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:33:52,199 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:33:52,201 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:33:53,017 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:53,018 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:33:55,020 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:57,022 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:58,287 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:33:58,290 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:33:58,293 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:33:59,026 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:33:59,026 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:34:00,230 DEBUG   SenderThread:13651 [sender.py:send():235] send: stats
+2022-02-10 23:34:01,028 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:03,031 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:03,364 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:34:03,364 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:34:03,367 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:34:04,034 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:34:05,035 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:06,391 DEBUG   HandlerThread:13651 [handler.py:handle_request():131] handle_request: stop_status
+2022-02-10 23:34:06,392 DEBUG   SenderThread:13651 [sender.py:send_request():249] send_request: stop_status
+2022-02-10 23:34:07,038 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:08,564 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:34:08,567 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:34:08,578 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:34:09,040 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:09,041 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:34:11,043 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:13,046 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:14,100 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:34:14,102 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:34:14,114 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:34:15,049 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:15,049 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:34:17,051 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:19,054 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:19,558 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:34:19,560 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:34:19,571 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:34:20,055 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:34:21,057 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:21,702 DEBUG   HandlerThread:13651 [handler.py:handle_request():131] handle_request: stop_status
+2022-02-10 23:34:21,703 DEBUG   SenderThread:13651 [sender.py:send_request():249] send_request: stop_status
+2022-02-10 23:34:23,060 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:25,063 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:26,585 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:34:26,587 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:34:26,598 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:34:27,067 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:27,067 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:34:29,069 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:30,470 DEBUG   SenderThread:13651 [sender.py:send():235] send: stats
+2022-02-10 23:34:31,072 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:31,952 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:34:31,953 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:34:31,956 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:34:32,073 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:34:33,074 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:35,077 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:36,991 DEBUG   HandlerThread:13651 [handler.py:handle_request():131] handle_request: stop_status
+2022-02-10 23:34:36,992 DEBUG   SenderThread:13651 [sender.py:send_request():249] send_request: stop_status
+2022-02-10 23:34:37,080 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:37,265 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:34:37,267 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:34:37,270 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:34:38,081 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:34:39,083 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:41,085 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:42,160 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:34:42,162 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:34:42,164 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:34:43,088 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:43,089 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:34:45,091 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:47,094 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:47,205 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:34:47,207 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:34:47,210 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:34:48,095 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:34:49,096 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:51,099 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:52,266 DEBUG   HandlerThread:13651 [handler.py:handle_request():131] handle_request: stop_status
+2022-02-10 23:34:52,267 DEBUG   SenderThread:13651 [sender.py:send_request():249] send_request: stop_status
+2022-02-10 23:34:52,897 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:34:52,898 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:34:52,900 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:34:53,102 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:53,102 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:34:55,104 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:57,107 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:58,558 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:34:58,559 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:34:58,570 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:34:59,110 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:34:59,110 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:35:00,696 DEBUG   SenderThread:13651 [sender.py:send():235] send: stats
+2022-02-10 23:35:01,113 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:03,116 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:03,923 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:35:03,925 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:35:03,937 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:35:04,117 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:35:05,118 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:07,121 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:07,893 DEBUG   HandlerThread:13651 [handler.py:handle_request():131] handle_request: stop_status
+2022-02-10 23:35:07,893 DEBUG   SenderThread:13651 [sender.py:send_request():249] send_request: stop_status
+2022-02-10 23:35:09,123 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:09,536 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:35:09,538 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:35:09,549 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:35:10,124 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:35:11,125 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:13,131 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:14,654 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:35:14,655 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:35:14,657 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:35:15,133 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:15,133 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:35:17,136 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:19,138 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:19,792 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:35:19,794 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:35:19,806 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:35:20,140 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:35:21,141 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:23,104 DEBUG   HandlerThread:13651 [handler.py:handle_request():131] handle_request: stop_status
+2022-02-10 23:35:23,104 DEBUG   SenderThread:13651 [sender.py:send_request():249] send_request: stop_status
+2022-02-10 23:35:23,143 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:25,147 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:25,389 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:35:25,392 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:35:25,394 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:35:26,148 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:35:27,150 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:29,152 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:30,512 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:35:30,514 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:35:30,516 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:35:30,937 DEBUG   SenderThread:13651 [sender.py:send():235] send: stats
+2022-02-10 23:35:31,156 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:31,156 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:35:33,158 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:35,161 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:35,774 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:35:35,775 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:35:35,777 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:35:36,163 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:35:37,164 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:38,859 DEBUG   HandlerThread:13651 [handler.py:handle_request():131] handle_request: stop_status
+2022-02-10 23:35:38,860 DEBUG   SenderThread:13651 [sender.py:send_request():249] send_request: stop_status
+2022-02-10 23:35:39,167 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:41,170 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:41,174 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:35:41,176 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:35:41,187 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:35:42,171 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:35:43,173 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:45,176 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:46,279 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:35:46,281 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:35:46,293 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:35:47,178 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:47,178 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:35:49,181 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:51,183 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:51,559 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:35:51,561 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:35:51,564 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:35:52,185 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:35:53,186 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:54,273 DEBUG   HandlerThread:13651 [handler.py:handle_request():131] handle_request: stop_status
+2022-02-10 23:35:54,274 DEBUG   SenderThread:13651 [sender.py:send_request():249] send_request: stop_status
+2022-02-10 23:35:55,192 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:57,194 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:35:57,197 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:35:57,207 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:35:57,209 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:35:57,209 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:35:59,211 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:01,176 DEBUG   SenderThread:13651 [sender.py:send():235] send: stats
+2022-02-10 23:36:01,214 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:02,976 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:36:02,976 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:36:02,979 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:36:03,216 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:03,217 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:36:05,219 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:07,222 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:08,433 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:36:08,436 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:36:08,447 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:36:09,225 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:09,226 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:36:09,498 DEBUG   HandlerThread:13651 [handler.py:handle_request():131] handle_request: stop_status
+2022-02-10 23:36:09,499 DEBUG   SenderThread:13651 [sender.py:send_request():249] send_request: stop_status
+2022-02-10 23:36:11,228 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:13,231 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:14,858 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:36:14,861 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:36:14,872 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:36:15,234 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:15,235 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:36:17,237 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:19,240 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:19,931 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:36:19,933 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:36:19,943 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:36:20,241 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:36:21,243 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:23,246 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:24,717 DEBUG   HandlerThread:13651 [handler.py:handle_request():131] handle_request: stop_status
+2022-02-10 23:36:24,718 DEBUG   SenderThread:13651 [sender.py:send_request():249] send_request: stop_status
+2022-02-10 23:36:24,964 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:36:24,965 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:36:24,967 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:36:25,249 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:25,250 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:36:27,251 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:29,254 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:29,970 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:36:29,972 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:36:29,984 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:36:30,255 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:36:31,257 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:31,416 DEBUG   SenderThread:13651 [sender.py:send():235] send: stats
+2022-02-10 23:36:33,259 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:35,249 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:36:35,252 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:36:35,263 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:36:35,264 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:35,265 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:36:37,266 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:39,269 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:39,944 DEBUG   HandlerThread:13651 [handler.py:handle_request():131] handle_request: stop_status
+2022-02-10 23:36:39,944 DEBUG   SenderThread:13651 [sender.py:send_request():249] send_request: stop_status
+2022-02-10 23:36:40,610 DEBUG   SenderThread:13651 [sender.py:send():235] send: history
+2022-02-10 23:36:40,612 DEBUG   SenderThread:13651 [sender.py:send():235] send: summary
+2022-02-10 23:36:40,614 INFO    SenderThread:13651 [sender.py:_save_file():944] saving file wandb-summary.json with policy end
+2022-02-10 23:36:41,273 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log
+2022-02-10 23:36:41,273 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/wandb-summary.json
+2022-02-10 23:36:43,275 INFO    Thread-14 :13651 [dir_watcher.py:_on_file_modified():230] file/dir modified: /media/ddl/새 볼륨/Git/human_pose_estimation/outputs/2022-02-10/23-32-19/wandb/run-20220210_233227-1ljxbaqe/files/output.log

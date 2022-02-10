@@ -33,6 +33,8 @@ from sklearn.metrics import roc_auc_score
 from sklearn import metrics
 from sklearn.metrics import precision_score, accuracy_score
 import itertools
+import wandb
+
 class Trainer():
     def __init__(self, conf, rank=0):
         self.conf = copy.deepcopy(conf)
@@ -44,6 +46,20 @@ class Trainer():
     def set_env(self):
         torch.backends.cudnn.benchmark = True
         torch.cuda.set_device(self.rank)
+        if self.conf.base.wandb is True:
+            config={
+            "architecture": self.conf.architecture.type,
+            "optimizer": self.conf.optimizer.type,
+            "scheduler": self.conf.scheduler.type,
+            "epochs": self.conf.hyperparameter.epochs,
+            "batch_size": self.conf.dataset.train.batch_size,
+            "loss": self.conf.loss.type,
+            "learning rate": self.conf.optimizer.params.lr}
+            if self.conf.optimizer.params.weight_decay is not None:
+                config['weight_decay'] = self.conf.optimizer.params.weight_decay
+            wandb.init(project="action_recognition_with_transformer", config=config)
+            wandb.run.name = self.conf.architecture.type
+            wandb.run.save()
 
         # mixed precision
         self.amp_autocast = suppress
@@ -286,6 +302,8 @@ class Trainer():
 
     def train_eval(self):
         model = self.build_model()
+        if self.conf.base.wandb is True:
+            wandb.watch(model)
         criterion = self.build_loss()
         optimizer = self.build_optimizer(model)
 
@@ -325,6 +343,12 @@ class Trainer():
 
             if self.is_master:
                 print(f'Epoch {epoch}/{self.conf.hyperparameter.epochs} - train_Acc: {train_acc:.3f}, train_Loss: {train_loss:.3f}, valid_Acc: {valid_acc:.3f}, valid_Loss: {valid_loss:.3f}')
+                if self.conf.base.wandb is True:
+                    wandb.log({
+            "train accuracy": train_acc,
+            "train_loss": train_loss,
+            "valid accuracy":  valid_acc,
+            "valid_loss": valid_loss})
 
     def test_sample_visualization(self, y_pred, label, num, thresh=0.5):
         y_pred = y_pred.detach().cpu().numpy()

@@ -1,0 +1,112 @@
+model =  lstm x
+./test/board/v_0 sdfasdfasdfadfasd
+[34m[1mwandb[39m[22m: [33mWARNING[39m Calling wandb.run.save without any arguments is deprecated.Changes to attributes are automatically persisted.
+
+train:1/300    100%|██████████████████| 764/764 [00:04<00:00, 169.19it/s, train_Acc=0.0825, recall=1, precision=0.0825, train_Loss=1.13]
+val  :1/300     36%|██████▍           | 68/191 [00:00<00:00, 677.20it/s, Valid_Acc=0.0765, recall=1, precision=0.0765, valid_Loss=1.14]
+Running DDP checkpoint example on rank 0.
+val  :1/300    100%|██████████████████| 191/191 [00:00<00:00, 668.01it/s, Valid_Acc=0.0765, recall=1, precision=0.0765, valid_Loss=1.14]
+
+train:2/300     80%|██████████████▍   | 612/764 [00:03<00:00, 171.15it/s, train_Acc=0.081, recall=1, precision=0.081, train_Loss=1.19]
+Running DDP checkpoint example on rank 0.
+train:2/300    100%|██████████████████| 764/764 [00:04<00:00, 152.94it/s, train_Acc=0.0797, recall=1, precision=0.0797, train_Loss=1.09]
+val  :2/300    100%|██████████████████| 191/191 [00:00<00:00, 555.24it/s, Valid_Acc=0.0765, recall=1, precision=0.0765, valid_Loss=1.09]
+
+
+train:3/300     92%|████████████████▌ | 702/764 [00:04<00:00, 163.21it/s, train_Acc=0.693, recall=0.0665, precision=0.0911, train_Loss=0.66]
+Running DDP checkpoint example on rank 0.
+train:3/300    100%|██████████████████| 764/764 [00:05<00:00, 148.62it/s, train_Acc=0.693, recall=0.0665, precision=0.0911, train_Loss=0.66]
+val  :3/300    100%|██████████████████| 191/191 [00:00<00:00, 536.22it/s, Valid_Acc=0.807, recall=0, precision=0, valid_Loss=1.05]
+
+train:4/300    100%|██████████████████| 764/764 [00:05<00:00, 145.25it/s, train_Acc=0.788, recall=0, precision=0, train_Loss=0.24]
+val  :4/300     28%|█████             | 54/191 [00:00<00:00, 535.30it/s, Valid_Acc=1, recall=0, precision=0, valid_Loss=0.19]
+Running DDP checkpoint example on rank 0.
+val  :4/300    100%|██████████████████| 191/191 [00:00<00:00, 572.17it/s, Valid_Acc=0.807, recall=0, precision=0, valid_Loss=1.05]
+
+train:5/300     78%|██████████████    | 595/764 [00:03<00:01, 160.23it/s, train_Acc=0.785, recall=0, precision=0, train_Loss=0.64]
+Running DDP checkpoint example on rank 0.
+train:5/300    100%|██████████████████| 764/764 [00:04<00:00, 157.99it/s, train_Acc=0.791, recall=0, precision=0, train_Loss=1.01]
+val  :5/300    100%|██████████████████| 191/191 [00:00<00:00, 681.40it/s, Valid_Acc=0.807, recall=0, precision=0, valid_Loss=1.02]
+
+
+train:6/300     85%|███████████████▏  | 647/764 [00:04<00:00, 172.01it/s, train_Acc=0.79, recall=0, precision=0, train_Loss=0.75]
+Running DDP checkpoint example on rank 0.
+train:6/300    100%|██████████████████| 764/764 [00:04<00:00, 155.20it/s, train_Acc=0.787, recall=0.00168, precision=1, train_Loss=0.55]
+val  :6/300    100%|██████████████████| 191/191 [00:00<00:00, 612.77it/s, Valid_Acc=0.807, recall=0, precision=0, valid_Loss=1.02]
+
+train:7/300    100%|██████████████████| 764/764 [00:04<00:00, 162.67it/s, train_Acc=0.786, recall=0.00167, precision=1, train_Loss=0.13]
+val  :7/300    100%|██████████████████| 191/191 [00:00<00:00, 702.86it/s, Valid_Acc=0.807, recall=0, precision=0, valid_Loss=0.84]
+train:8/300      2%|▍                 | 16/764 [00:00<00:04, 157.64it/s, train_Acc=0.75, recall=0, precision=0, train_Loss=1.15]
+Running DDP checkpoint example on rank 0.
+
+
+train:8/300     93%|████████████████▋ | 707/764 [00:04<00:00, 168.40it/s, train_Acc=0.783, recall=0.00166, precision=0.167, train_Loss=0.26]
+Running DDP checkpoint example on rank 0.
+train:8/300    100%|██████████████████| 764/764 [00:04<00:00, 168.10it/s, train_Acc=0.783, recall=0.00166, precision=0.167, train_Loss=0.26]
+val  :8/300    100%|██████████████████| 191/191 [00:00<00:00, 608.97it/s, Valid_Acc=0.807, recall=0, precision=0, valid_Loss=0.65]
+
+train:9/300     75%|█████████████▌    | 573/764 [00:03<00:01, 159.27it/s, train_Acc=0.787, recall=0.0476, precision=0.75, train_Loss=0.24]
+Running DDP checkpoint example on rank 0.
+train:9/300    100%|██████████████████| 764/764 [00:04<00:00, 167.58it/s, train_Acc=0.798, recall=0.0773, precision=0.719, train_Loss=0.48]
+val  :9/300    100%|██████████████████| 191/191 [00:00<00:00, 707.25it/s, Valid_Acc=0.812, recall=0.154, precision=0.545, valid_Loss=0.58]
+
+train:10/300   100%|██████████████████| 764/764 [00:04<00:00, 162.70it/s, train_Acc=0.813, recall=0.245, precision=0.647, train_Loss=0.69]
+val  :10/300     0%|                  | 0/191 [00:00<?, ?it/s, Valid_Acc=1, recall=0, precision=0, valid_Loss=0.08]
+Running DDP checkpoint example on rank 0.
+val  :10/300   100%|██████████████████| 191/191 [00:00<00:00, 575.35it/s, Valid_Acc=0.822, recall=0.192, precision=0.625, valid_Loss=0.52]
+
+train:11/300   100%|██████████████████| 764/764 [00:05<00:00, 149.49it/s, train_Acc=0.81, recall=0.267, precision=0.641, train_Loss=0.21]
+/home/ddl/anaconda3/envs/kaggle/lib/python3.7/site-packages/torch/optim/lr_scheduler.py:509: UserWarning: To get the last learning rate computed by the scheduler, please use `get_last_lr()`.
+  "please use `get_last_lr()`.", UserWarning)
+val  :11/300    33%|█████▉            | 63/191 [00:00<00:00, 625.35it/s, Valid_Acc=0.827, recall=0.167, precision=0.722, valid_Loss=0.5]
+Running DDP checkpoint example on rank 0.
+val  :11/300   100%|██████████████████| 191/191 [00:00<00:00, 607.02it/s, Valid_Acc=0.827, recall=0.167, precision=0.722, valid_Loss=0.5]
+
+train:12/300    76%|█████████████▊    | 584/764 [00:03<00:01, 156.25it/s, train_Acc=0.829, recall=0.289, precision=0.733, train_Loss=0.48]
+Running DDP checkpoint example on rank 0.
+train:12/300   100%|██████████████████| 764/764 [00:05<00:00, 150.74it/s, train_Acc=0.826, recall=0.311, precision=0.71, train_Loss=0.23]
+val  :12/300   100%|██████████████████| 191/191 [00:00<00:00, 561.54it/s, Valid_Acc=0.832, recall=0.256, precision=0.667, valid_Loss=0.42]
+
+
+train:13/300    90%|████████████████▏ | 685/764 [00:04<00:00, 153.85it/s, train_Acc=0.821, recall=0.333, precision=0.635, train_Loss=0.64]
+Running DDP checkpoint example on rank 0.
+train:13/300   100%|██████████████████| 764/764 [00:05<00:00, 150.86it/s, train_Acc=0.822, recall=0.335, precision=0.649, train_Loss=0.09]
+val  :13/300   100%|██████████████████| 191/191 [00:00<00:00, 623.96it/s, Valid_Acc=0.827, recall=0.449, precision=0.565, valid_Loss=0.41]
+
+train:14/300   100%|██████████████████| 764/764 [00:05<00:00, 142.96it/s, train_Acc=0.836, recall=0.422, precision=0.681, train_Loss=0.05]
+val  :14/300     0%|                  | 0/191 [00:00<?, ?it/s, Valid_Acc=1, recall=0, precision=0, valid_Loss=0.03]
+Running DDP checkpoint example on rank 0.
+val  :14/300   100%|██████████████████| 191/191 [00:00<00:00, 562.42it/s, Valid_Acc=0.834, recall=0.397, precision=0.608, valid_Loss=0.39]
+
+train:15/300   100%|██████████████████| 764/764 [00:05<00:00, 149.79it/s, train_Acc=0.833, recall=0.446, precision=0.654, train_Loss=0.49]
+val  :15/300   100%|██████████████████| 191/191 [00:00<00:00, 643.24it/s, Valid_Acc=0.854, recall=0.462, precision=0.679, valid_Loss=0.38]
+train:16/300     6%|█                 | 47/764 [00:00<00:04, 155.02it/s, train_Acc=1, recall=1, precision=1, train_Loss=0.27]
+Running DDP checkpoint example on rank 0.
+
+
+train:16/300    91%|████████████████▎ | 692/764 [00:04<00:00, 162.79it/s, train_Acc=0.846, recall=0.478, precision=0.706, train_Loss=0.68]
+Running DDP checkpoint example on rank 0.
+train:16/300   100%|██████████████████| 764/764 [00:04<00:00, 157.89it/s, train_Acc=0.846, recall=0.478, precision=0.706, train_Loss=0.68]
+val  :16/300   100%|██████████████████| 191/191 [00:00<00:00, 647.43it/s, Valid_Acc=0.842, recall=0.5, precision=0.609, valid_Loss=0.37]
+
+train:17/300   100%|██████████████████| 764/764 [00:04<00:00, 160.74it/s, train_Acc=0.856, recall=0.499, precision=0.728, train_Loss=0.1]
+val  :17/300    36%|██████▍           | 68/191 [00:00<00:00, 672.97it/s, Valid_Acc=1, recall=0, precision=0, valid_Loss=0.01]
+Running DDP checkpoint example on rank 0.
+val  :17/300   100%|██████████████████| 191/191 [00:00<00:00, 647.28it/s, Valid_Acc=0.844, recall=0.487, precision=0.623, valid_Loss=0.33]
+
+train:18/300    80%|██████████████▎   | 608/764 [00:03<00:00, 162.60it/s, train_Acc=0.862, recall=0.539, precision=0.722, train_Loss=0.04]
+Running DDP checkpoint example on rank 0.
+train:18/300   100%|██████████████████| 764/764 [00:04<00:00, 160.71it/s, train_Acc=0.863, recall=0.547, precision=0.725, train_Loss=0.6]
+val  :18/300   100%|██████████████████| 191/191 [00:00<00:00, 620.84it/s, Valid_Acc=0.849, recall=0.667, precision=0.598, valid_Loss=0.34]
+
+train:19/300   100%|██████████████████| 764/764 [00:04<00:00, 156.34it/s, train_Acc=0.856, recall=0.568, precision=0.704, train_Loss=1.13]
+val  :19/300     0%|                  | 0/191 [00:00<?, ?it/s, Valid_Acc=1, recall=0, precision=0, valid_Loss=0.01]
+Running DDP checkpoint example on rank 0.
+val  :19/300   100%|██████████████████| 191/191 [00:00<00:00, 630.19it/s, Valid_Acc=0.866, recall=0.538, precision=0.7, valid_Loss=0.29]
+
+train:20/300    78%|█████████████▉    | 594/764 [00:03<00:01, 147.17it/s, train_Acc=0.859, recall=0.538, precision=0.718, train_Loss=0.54]
+Running DDP checkpoint example on rank 0.
+train:20/300   100%|██████████████████| 764/764 [00:04<00:00, 160.47it/s, train_Acc=0.858, recall=0.545, precision=0.716, train_Loss=0.21]
+val  :20/300   100%|██████████████████| 191/191 [00:00<00:00, 627.07it/s, Valid_Acc=0.866, recall=0.551, precision=0.694, valid_Loss=0.28]
+
+

@@ -20,6 +20,7 @@ base:
   save_dir: ./test
   resume: False
   debug: True
+  wandb: True
 
 MASTER_ADDR: '127.0.0.3'
 MASTER_PORT: '9095'
