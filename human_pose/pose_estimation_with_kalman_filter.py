@@ -9,6 +9,7 @@
 
 import argparse
 from cgitb import text
+from lib2to3.pytree import BasePattern
 import math
 from ssl import ALERT_DESCRIPTION_NO_RENEGOTIATION
 from turtle import right
@@ -122,7 +123,7 @@ def main(color=(224, 255, 255)):
         count = 0
         while os.path.exists(os.path.join(base_path, pose_txt_name + str(count))):
             count += 1
-        pose_txt_name = pose_txt_name + str(count)
+        pose_txt_name = pose_txt_name + str(count) + '.txt'
         head_pose_txt = open(pose_txt_name, 'w')
         state = 'N'
     
@@ -187,6 +188,9 @@ def main(color=(224, 255, 255)):
 
                 # Start streaming
                 pipeline.start(config)
+            elif use_video:
+                video_path = os.path.join(base_path, 'training_dataset.avi')
+                cap = cv2.VideoCapture(video_path)
             else:
                 cap = cv2.VideoCapture(0)
 
@@ -407,12 +411,18 @@ def main(color=(224, 255, 255)):
                         break
                     elif pressed_key == ord('n'):
                         state = 'N'
-                    elif pressed_key == ord('y'):
-                        state = 'Y'
-                    elif pressed_key == ord('p'):
-                        state = 'P'
-                    elif pressed_key == ord('r'):
-                        state = 'R'
+                    elif pressed_key == ord('q'):
+                        state = 'Yaw-'
+                    elif pressed_key == ord('w'):
+                        state = 'Yaw+'
+                    elif pressed_key == ord('a'):
+                        state = 'Pitch+'
+                    elif pressed_key == ord('s'):
+                        state = 'Pitch-'
+                    elif pressed_key == ord('z'):
+                        state = 'Roll-'
+                    elif pressed_key == ord('x'):
+                        state = 'Roll+'
                 else:
                     if pressed_key == 27:
                         break
