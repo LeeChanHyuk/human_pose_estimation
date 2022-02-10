@@ -35,13 +35,13 @@ mp_face_detection = mp.solutions.face_detection
 mp_face_mesh = mp.solutions.face_mesh
 
 
-use_realsense = True
-use_video = False
-annotation = False
-visualization = False
-text_visualization = False
+use_realsense = False
+use_video = True
+annotation = True
+visualization = True
+text_visualization = True
 body_pose_estimation = False
-head_pose_estimation = False # 12 프레임 저하
+head_pose_estimation = True # 12 프레임 저하
 gaze_estimation = False # 22프레임 저하
 
 
@@ -118,10 +118,11 @@ def upside_body_pose_calculator(left_shoulder, right_shoulder, center_hip):
 
 def main(color=(224, 255, 255)):
     base_path = os.getcwd()
+    write_count = 0
     if annotation:
         pose_txt_name = 'head_pose_'
         count = 0
-        while os.path.exists(os.path.join(base_path, pose_txt_name + str(count))):
+        while os.path.exists(os.path.join(base_path, pose_txt_name + str(count)+'.txt')):
             count += 1
         pose_txt_name = pose_txt_name + str(count) + '.txt'
         head_pose_txt = open(pose_txt_name, 'w')
@@ -189,8 +190,10 @@ def main(color=(224, 255, 255)):
                 # Start streaming
                 pipeline.start(config)
             elif use_video:
-                video_path = os.path.join(base_path, 'training_dataset.avi')
+                video_path = os.path.join(base_path, 'test_dataset.avi')
                 cap = cv2.VideoCapture(video_path)
+                length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                print('Video length is ' + str(length))
             else:
                 cap = cv2.VideoCapture(0)
 
@@ -199,6 +202,7 @@ def main(color=(224, 255, 255)):
             # Load the frame from webcam
             while True:
                 start_time = time.time()
+                a = cv2.waitKey(10)
                 if use_realsense:
                     frames = pipeline.wait_for_frames()
                     align_frames = align.process(frames)
@@ -213,6 +217,8 @@ def main(color=(224, 255, 255)):
                     frame = np.array(frame.get_data())
                 else:
                     ret, frame = cap.read()
+                    if frame is None:
+                        break
                     depth = np.zeros(frame.shape)
                 cv2.imshow('frame', frame)
                 cv2.waitKey(1)
@@ -269,6 +275,7 @@ def main(color=(224, 255, 255)):
                             roll = head_pose_stabilizers[2].state[0][0]
                             line = str(yaw)+' '+str(pitch) + ' ' + str(roll) + ' ' + state + '\n'
                             head_pose_txt.write(line)
+                            write_count += 1
                             
 
 
@@ -361,9 +368,9 @@ def main(color=(224, 255, 255)):
                                 color1=(255,255,0), color2=(255,0,255), color3=(0,255,255))
 
                     if head_pose_estimation and yaw:
-                        print('head pose yaw: ', yaw)
-                        print('head pose pitch: ', pitch)
-                        print('head pose roll: ', roll)
+                        #print('head pose yaw: ', yaw)
+                        #print('head pose pitch: ', pitch)
+                        #print('head pose roll: ', roll)
                         frame = utils.draw_axis(frame, yaw, pitch, roll, [int((face_boxes[0][0] + face_boxes[0][2])/2), int(face_boxes[0][1] - 30)])
                     
                     if gaze_estimation:
@@ -388,7 +395,10 @@ def main(color=(224, 255, 255)):
                         if head_pose_estimation and yaw:
                             face_center_x = (face_boxes[0][0] + face_boxes[0][2]) / 2
                             face_center_y = (face_boxes[0][1] + face_boxes[0][3]) / 2
-                            face_center_z = depth[int(face_center_y), int(face_center_x)]
+                            if len(depth.shape) > 2:
+                                face_center_z = depth[int(face_center_y), int(face_center_x), 0]
+                            else:
+                                face_center_z = depth[int(face_center_y), int(face_center_x)]
                             zero_array = visualization_tool.draw_face_information(zero_array, width, height, round(face_center_x, 2), round(face_center_y, 2), round(face_center_z, 2), round(yaw, 2)
                             , round(pitch, 2), round(roll, 2))
                         if gaze_estimation and gazes is not None:
