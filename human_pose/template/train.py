@@ -224,6 +224,11 @@ class Trainer():
             self.writer.add_scalar('Recall/train', recall, epoch)
             self.writer.add_scalar('Precision/train', precision, epoch)
             self.writer.flush()
+            if self.conf.base.wandb is True:
+                wandb.log({
+        "train precision": precision,
+        "train recall": recall})
+
         # return loss, accuracy
         #return t_loss / t_imgnum, t_acc / t_imgnum, t_iou / t_imgnum, dl
         return t_loss/ t_imgnum, accuracy, dl
@@ -295,6 +300,10 @@ class Trainer():
             self.writer.add_scalar('Recall/val', recall, epoch)
             self.writer.add_scalar('Precision/val', precision, epoch)
             self.writer.flush()
+            if self.conf.base.wandb is True:
+                wandb.log({
+        "valid precision": precision,
+        "valid recall": recall})
         # return loss, accuracy
         #return t_loss / t_imgnum, t_acc / t_imgnum, t_iou / t_imgnum, dl
         return t_loss/ t_imgnum, accuracy, dl
