@@ -8,8 +8,8 @@ from efficientnet_pytorch import EfficientNet
 # from .efficientv2 import EffNetV2
 from timm.models import create_model
 import segmentation_models_pytorch as smp
-import lstm
-from action_transformer import ActionTransformer
+from . import lstm
+from . import action_transformer
 def create(conf, num_classes=None):
     base, architecture_name = [l.lower() for l in conf['type'].split('/')]
     print('model = ',base,architecture_name)
@@ -48,21 +48,22 @@ def create(conf, num_classes=None):
                             bias=False)
         architecture.fc = nn.Linear(2048,1)
     elif base == 'lstm':
-        if architecture_name == 'lstm':
+        if architecture_name == 'x':
             architecture = lstm.LSTM(bidirection=False)
         elif architecture_name == 'bidirectional_lstm':
             architecture = lstm.LSTM(bidirection=True)
     elif base == 'action_transformer':
         if architecture_name == 'head_motion':
-            architecture = ActionTransformer(
-                ntoken=3,
-                d_model=50,
-                nhead=2,
-                d_hid=128,
-                dropout=0.3,
-                mlp_size=256,
-                classes=8
-            )
+            order = conf['mode']
+            architecture = action_transformer.ActionTransformer1(
+                ntoken=conf['ntoken'],
+                nhead=conf['nhead'][order],
+                dropout=conf['dropout'][order],
+                mlp_size=conf['mlp_size'][order],
+                classes=conf['classes'],
+                nlayers=conf['nlayers'][order],
+                sequence_length=conf['sequence_length']
+            ) # cls token 관련이 빠져있음. vector 중 0번째만 남기거나 이런게.
     elif base == 'unet':
         architecture = smp.Unet(
         encoder_name=conf['backbone'],      # choose encoder, e.g. mobilenet_v2 or efficientnet-b7

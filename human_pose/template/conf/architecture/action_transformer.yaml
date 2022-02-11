@@ -1,1 +1,30 @@
+mode: 0
+classes: 7
+d_hid:
+- 64
+- 128
+- 192
+- 256
+dropout:
+- 0
+- 0
+- 0
+- 0
+mlp_size:
+- 256
+- 256
+- 256
+- 512
+nhead:
+- 1
+- 2
+- 3
+- 4
+nlayers:
+- 4
+- 5
+- 6
+- 6
+ntoken: 3
+sequence_length: 30
 type: action_transformer/head_motion

@@ -1,9 +1,11 @@
+from turtle import forward
 from unicodedata import bidirectional
+from importlib_metadata import requires
 import torch.nn as nn
 import torch
 from torch import Tensor
 import math
-from transformer import TransformerEncoder
+from . import transformer
 
 class PositionalEncoding(nn.Module):
 
@@ -25,6 +27,23 @@ class PositionalEncoding(nn.Module):
         """
         x = x + self.pe[:x.size(0)]
         return self.dropout(x)
+        
+class PositionalEmbedding(nn.Module):
+    def __init__(self, d_model: int, sequence_length: int):
+        super().__init__()
+        self.d_model = d_model
+        self.sequence_length = sequence_length
+        self.CLS_Token = nn.Parameter(torch.randn(1, 1, self.d_model, requires_grad=True), requires_grad=True)
+        self.positional_embedding = nn.Embedding(self.sequence_length+1, self.d_model)
+        nn.init.xavier_normal_(self.CLS_Token)
+
+    def forward(self, x: Tensor) -> Tensor:
+        positions = torch.arange(start=0, end=self.sequence_length+1, dtype=torch.long, device=0)
+        cls_tokens = self.CLS_Token.repeat_interleave(x.shape[0], dim=0) # this token is appended to frist block of the sequence. It must be repeat with batch_size
+        inputs = torch.cat((cls_tokens, x), axis=1)
+        positional_embeddings = self.positional_embedding(positions)
+        inputs += positional_embeddings
+        return inputs
 
 class TransformerModel(nn.Module):
 
@@ -63,29 +82,29 @@ class TransformerModel(nn.Module):
         return output
 
     
-class ActionTransformer(nn.Module):
+class ActionTransformer1(nn.Module):
 
-    def __init__(self, ntoken: int, d_model: int, nhead: int, d_hid: int,
-                 nlayers: int, dropout: float = 0.5, mlp_size: int = 256, classes: int = 9):
+    def __init__(self, ntoken: int, nhead: int, sequence_length: int,
+                 nlayers: int, dropout: float = 0.5, mlp_size: int = 256, classes: int = 7):
         super().__init__()
         self.model_type = 'Transformer'
-        self.pos_encoder = PositionalEncoding(d_model, dropout)
-        encoder_layers = nn.TransformerEncoderLayer(d_model, nhead, d_hid, dropout)
+        self.d_model = 64 * nhead
+        self.d_hid = self.d_model * 4
+        self.positional_encoder = PositionalEmbedding(self.d_model, sequence_length)
+        encoder_layers = nn.TransformerEncoderLayer(self.d_model, nhead, self.d_hid, dropout)
         self.transformer_encoder = nn.TransformerEncoder(encoder_layers, nlayers)
-        self.encoder = nn.Embedding(ntoken, d_model)
-        self.d_model = d_model
-        self.dense_layer1 = nn.Embedding(d_model, mlp_size)
-        self.dense_layer2 = nn.Embedding(mlp_size, classes)
+        self.temp_encoder = nn.Linear(ntoken, self.d_model)
+        self.encoder = nn.Embedding(ntoken, self.d_model)
+        self.dense_layer1 = nn.Linear(self.d_model, mlp_size)
+        self.dense_layer2 = nn.Linear(mlp_size, classes)
 
         self.init_weights()
 
     def init_weights(self) -> None:
         initrange = 0.1
         self.encoder.weight.data.uniform_(-initrange, initrange)
-        self.decoder.bias.data.zero_()
-        self.decoder.weight.data.uniform_(-initrange, initrange)
 
-    def forward(self, src: Tensor, src_mask: Tensor) -> Tensor:
+    def forward(self, src: Tensor) -> Tensor:
         """
         Args:
             src: Tensor, shape [seq_len, batch_size]
@@ -95,9 +114,11 @@ class ActionTransformer(nn.Module):
             output Tensor of shape [seq_len, batch_size, ntoken]
         """
         # CLS Token만 추가 필요
-        src = self.encoder(src) * math.sqrt(self.d_model)
-        src = self.pos_encoder(src)
-        encoder_output = self.transformer_encoder(src, src_mask)
+ #       src = self.temp_encoder(src) * math.sqrt(self.d_model)
+        src = self.temp_encoder(src)
+        src = self.positional_encoder(src)
+        encoder_output = self.transformer_encoder(src)
+        encoder_output = encoder_output[:,0,:]
         output = self.dense_layer1(encoder_output)
         output = self.dense_layer2(output)
         return output

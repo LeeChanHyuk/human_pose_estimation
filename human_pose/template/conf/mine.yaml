@@ -1,9 +1,9 @@
 defaults:
   - log : tensorboard
-  - architecture: lstm
+  - architecture: action_transformer
   - dataset: ch_dataset
   - loss: ce
-  - optimizer: adam
+  - optimizer: sgd
   - hyperparameter: toy
   - scheduler: CosineAnnealingLR
   - saver: default_saver
@@ -20,6 +20,7 @@ base:
   save_dir: ./test
   resume: False
   debug: True
+  wandb: True
 
 MASTER_ADDR: '127.0.0.3'
 MASTER_PORT: '9095'

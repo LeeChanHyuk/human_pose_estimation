@@ -4,6 +4,7 @@ import sys
 import logging
 import datetime
 import random
+from matplotlib.pyplot import axis
 import numpy as np
 import copy
 import argparse
@@ -32,6 +33,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn import metrics
 from sklearn.metrics import precision_score, accuracy_score
 import itertools
+import wandb
 class Trainer():
     def __init__(self, conf, rank=0):
         self.conf = copy.deepcopy(conf)
@@ -43,6 +45,20 @@ class Trainer():
     def set_env(self):
         torch.backends.cudnn.benchmark = True
         torch.cuda.set_device(self.rank)
+        if self.conf.base.wandb is True:
+                    config={
+                    "architecture": self.conf.architecture.type,
+                    "optimizer": self.conf.optimizer.type,
+                    "scheduler": self.conf.scheduler.type,
+                    "epochs": self.conf.hyperparameter.epochs,
+                    "batch_size": self.conf.dataset.train.batch_size,
+                    "loss": self.conf.loss.type,
+                    "learning rate": self.conf.optimizer.params.lr}
+                    if self.conf.optimizer.params.weight_decay > 0:
+                        config['weight_decay'] = self.conf.optimizer.params.weight_decay
+                    wandb.init(project="action_recognition_with_transformer", config=config)
+                    wandb.run.name = self.conf.architecture.type
+                    wandb.run.save()
 
         # mixed precision
         self.amp_autocast = suppress
@@ -130,10 +146,16 @@ class Trainer():
         train_total = 0
         one_epoch_loss = 0
         # eval_result = [accuracy, precision, recall, loss, image_num]
-        t_acc = np.zeros(1)
-        t_iou = np.zeros(1)
-        t_loss = np.zeros(1)
-        t_imgnum = np.zeros(1)
+        t_loss = 0
+        t_imgnum = 0
+        accuracy = 0
+        accuracy_from_scikit_learn = 0
+        recall = 0
+        precision = 0
+        TN = 0
+        TP = 0
+        FN = 0
+        FP = 0
 
         #torch.set_default_tensor_type(torch.cuda.LONG)
         model.train()
@@ -153,23 +175,12 @@ class Trainer():
             with self.amp_autocast():
                 input = image
                 y_pred = model(input)
-                #if len(y_pred.shape) == 4:
-                #    y_pred = torch.argmax(y_pred, dim=1)
-                #else:
-                #    y_pred = torch.argmax(y_pred, dim=0)
-                if len(y_pred.shape) != len(label.shape):
-                    if len(y_pred.shape) > len(label.shape):
-                        label = torch.unsqueeze(label, dim=1)
-                    else:
-                        y_pred = torch.unsqueeze(y_pred, dim=1)
-                #y_pred = torch.argmax(y_pred, dim=1)[None,:]
-                #label = F.one_hot(label.to(torch.int64), num_classes=10)
+                
                 y_pred = y_pred.to(torch.float)
-                label = label.to(torch.int64)
+                label = label.to(torch.long)
                 loss = criterion(y_pred, label).float()
                 #loss.requires_grad = True
             optimizer.zero_grad(set_to_none=True)
-            t_imgnum += y_pred[0]
             
             if self.scaler is None:
                 loss.backward()
@@ -179,45 +190,50 @@ class Trainer():
                 self.scaler.step(optimizer)
                 self.scaler.update()
             y_pred = y_pred.detach().cpu().numpy()
+
             label = label.detach().cpu().numpy()
+            t_imgnum += y_pred.shape[0]
+            t_loss += (loss.item() * y_pred.shape[0])
+            y_pred = np.argmax(y_pred, axis=1)
             y_pred = np.around(y_pred)
-            TN = 0
-            TP = 0
-            FN = 0
-            FP = 0
+            accuracy_from_scikit_learn += (accuracy_score(label,y_pred) * y_pred.shape[0])
             for i in range(len(y_pred)):
-                if y_pred[i] == 0 and label == 0:
+                if y_pred[i] == 0 and label[i] == 0:
                     TN += 1
-                elif y_pred[i] == 0 and label >= 1:
+                elif y_pred[i] == 0 and label[i] >= 1:
                     FN += 1
-                elif y_pred[i] >= 1 and label == 0:
+                elif y_pred[i] >= 1 and label[i] == 0:
                     FP += 1
-                elif y_pred[i] == 1 and label == 1:
+                elif y_pred[i] == 1 and label[i] == 1:
                     TP += 1
-                elif y_pred[i] == 2 and label == 2:
+                elif y_pred[i] == 2 and label[i] == 2:
                     TP += 1
-            accuracy = (TP + TN) / (TP + TN + FP + FN)
-            recall = (TP) / (TP + FN)
-            precision = (TP) / (TP + FP)
 
             if step % 100 == 0:
-                pbar.set_postfix({'train_Acc':accuracy, 'recall':recall, 'precision':precision, 'train_Loss':round(loss.item(),2)})
+                accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
+                accuracy_sci = accuracy_from_scikit_learn / t_imgnum
+                recall = (TP) / (TP + FN + 0.000001)
+                precision = (TP) / (TP + FP + 0.000001)
+                pbar.set_postfix({'train_Acc':accuracy, 'train_acc2':accuracy_sci,'recall':recall, 'precision':precision, 'train_Loss':round(loss.item(),2)})
         
         #torch.distributed.reduce(counter, 0)
         if self.is_master:
+            accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
+            recall = (TP) / (TP + FN + 0.000001)
+            precision = (TP) / (TP + FP + 0.000001)
             metric = {'Acc': accuracy, 'Loss': t_loss / t_imgnum,'optimizer':optimizer}
             self.writer.add_scalar("Loss/train", t_loss / t_imgnum, epoch)
             self.writer.add_scalar("ACC/train", accuracy, epoch)
-            self.writer.add_scalar('Recall/train', recall/t_imgnum)
-            self.writer.add_scalar('Precision/train', precision/t_imgnum)
-            logger.update_log(metric,current_step,'train') # update logger step
-            logger.update_histogram(model,current_step,'train') # update weight histogram 
-            logger.update_image(image,current_step,'train') # update transpose image
-            logger.update_metric()
+            self.writer.add_scalar('Recall/train', recall, epoch)
+            self.writer.add_scalar('Precision/train', precision, epoch)
             self.writer.flush()
+            if self.conf.base.wandb is True:
+                wandb.log({
+        "train precision": precision,
+        "train recall": recall})
         # return loss, accuracy
         #return t_loss / t_imgnum, t_acc / t_imgnum, t_iou / t_imgnum, dl
-        return t_loss/ t_imgnum, accuracy, dl
+        return t_loss/ t_imgnum, accuracy, accuracy_from_scikit_learn/t_imgnum, dl
 
 
     @torch.no_grad()
@@ -233,10 +249,15 @@ class Trainer():
             disable=not self.is_master
             ) # set progress bar
         current_step = epoch
-        t_acc = np.zeros(1)
-        t_iou = np.zeros(1)
-        t_loss = np.zeros(1)
-        t_imgnum = np.zeros(1)
+        t_loss = 0
+        t_imgnum = 0
+        accuracy = 0
+        recall = 0
+        precision = 0
+        TN = 0
+        TP = 0
+        FN = 0
+        FP = 0
 
         for step, (image, label) in pbar:
             image = image.to(device=self.rank, non_blocking=True).float()
@@ -244,52 +265,47 @@ class Trainer():
             with self.amp_autocast():
                 input = image
                 y_pred = model(input)
-                if len(y_pred.shape) != len(label.shape):
-                    if len(y_pred.shape) > len(label.shape):
-                        label = torch.unsqueeze(label, dim=1)
-                    else:
-                        y_pred = torch.unsqueeze(y_pred, dim=1)
                 y_pred = y_pred.to(torch.float)
-                label = label.to(torch.int64)
+                label = label.to(torch.long)
                 loss = criterion(y_pred, label).float()
-                #loss.requires_grad = False
             y_pred = y_pred.detach().cpu().numpy()
             label = label.detach().cpu().numpy()
+            t_imgnum += y_pred.shape[0]
+            t_loss += (loss.item() * y_pred.shape[0])
+            y_pred = np.argmax(y_pred, axis=1)
             y_pred = np.around(y_pred)
-            TN = 0
-            TP = 0
-            FN = 0
-            FP = 0
             for i in range(len(y_pred)):
-                if y_pred[i] == 0 and label == 0:
+                if y_pred[i] == 0 and label[i] == 0:
                     TN += 1
-                elif y_pred[i] == 0 and label >= 1:
+                elif y_pred[i] == 0 and label[i] >= 1:
                     FN += 1
-                elif y_pred[i] >= 1 and label == 0:
+                elif y_pred[i] >= 1 and label[i] == 0:
                     FP += 1
-                elif y_pred[i] == 1 and label == 1:
+                elif y_pred[i] == 1 and label[i] == 1:
                     TP += 1
-                elif y_pred[i] == 2 and label == 2:
+                elif y_pred[i] == 2 and label[i] == 2:
                     TP += 1
-            accuracy = (TP + TN) / (TP + TN + FP + FN)
-            recall = (TP) / (TP + FN)
-            precision = (TP) / (TP + FP)
 
             if step % 100 == 0:
-                pbar.set_postfix({'train_Acc':accuracy, 'recall':recall, 'precision':precision, 'train_Loss':round(loss.item(),2)})
+                accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
+                recall = (TP) / (TP + FN + 0.000001)
+                precision = (TP) / (TP + FP + 0.000001)
+                pbar.set_postfix({'Valid_Acc':accuracy, 'recall':recall, 'precision':precision, 'valid_Loss':round(loss.item(),2) / t_imgnum})
         
         #torch.distributed.reduce(counter, 0)
         if self.is_master:
-            metric = {'Acc': accuracy, 'Loss': t_loss / t_imgnum,'optimizer':optimizer}
-            self.writer.add_scalar("Loss/train", t_loss / t_imgnum, epoch)
-            self.writer.add_scalar("ACC/train", accuracy, epoch)
-            self.writer.add_scalar('Recall/train', recall/t_imgnum)
-            self.writer.add_scalar('Precision/train', precision/t_imgnum)
-            logger.update_log(metric,current_step,'train') # update logger step
-            logger.update_histogram(model,current_step,'train') # update weight histogram 
-            logger.update_image(image,current_step,'train') # update transpose image
-            logger.update_metric()
+            accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
+            recall = (TP) / (TP + FN + 0.000001)
+            precision = (TP) / (TP + FP + 0.000001)
+            self.writer.add_scalar("Loss/val", t_loss / t_imgnum, epoch)
+            self.writer.add_scalar("ACC/val", accuracy, epoch)
+            self.writer.add_scalar('Recall/val', recall, epoch)
+            self.writer.add_scalar('Precision/val', precision, epoch)
             self.writer.flush()
+            if self.conf.base.wandb is True:
+                wandb.log({
+        "valid precision": precision,
+        "valid recall": recall})
         # return loss, accuracy
         #return t_loss / t_imgnum, t_acc / t_imgnum, t_iou / t_imgnum, dl
         return t_loss/ t_imgnum, accuracy, dl
@@ -297,6 +313,8 @@ class Trainer():
 
     def train_eval(self):
         model = self.build_model()
+        if self.conf.base.wandb is True:
+            wandb.watch(model)
         criterion = self.build_loss()
         optimizer = self.build_optimizer(model)
 
@@ -323,11 +341,11 @@ class Trainer():
         for epoch in range(self.start_epoch, self.conf.hyperparameter.epochs + 1):
             train_sampler.set_epoch(epoch)
             # train
-            train_loss, train_acc, train_iou, train_dl = self.train_one_epoch(epoch, model, train_dl, criterion, optimizer, logger)
+            train_loss, train_acc, acc2, train_dl = self.train_one_epoch(epoch, model, train_dl, criterion, optimizer, logger)
             scheduler.step()
 
             # eval
-            valid_loss, valid_acc, valid_iou = self.eval(epoch, model, valid_dl, criterion, logger)
+            valid_loss, valid_acc, valid_dl = self.eval(epoch, model, valid_dl, criterion, logger)
             
             torch.cuda.synchronize()
 
@@ -335,7 +353,13 @@ class Trainer():
             saver.save_checkpoint(epoch=epoch, model=model, loss=train_loss, rank=self.rank, metric=valid_acc)
 
             if self.is_master:
-                print(f'Epoch {epoch}/{self.conf.hyperparameter.epochs} - train_Acc: {train_acc[0]:.3f}, train_Loss: {train_loss[0]:.3f}, valid_Acc: {valid_acc[0]:.3f}, valid_Loss: {valid_loss[0]:.3f}')
+                print(f'Epoch {epoch}/{self.conf.hyperparameter.epochs} - train_Acc: {train_acc:.3f}, train_ACC2: {acc2:.3f}, train_Loss: {train_loss:.3f}, valid_Acc: {valid_acc:.3f}, valid_Loss: {valid_loss:.3f}')
+                if self.conf.base.wandb is True:
+                    wandb.log({
+            "train accuracy": train_acc,
+            "train_loss": train_loss,
+            "valid accuracy":  valid_acc,
+            "valid_loss": valid_loss})
 
     def test_sample_visualization(self, y_pred, label, num, thresh=0.5):
         y_pred = y_pred.detach().cpu().numpy()
@@ -366,10 +390,15 @@ class Trainer():
             total=len(test_dl),
             disable=not self.is_master
             ) # set progress bar
-        t_acc = np.zeros(1)
-        t_precision = np.zeros(1)
-        t_iou = np.zeros(1)
-        t_imgnum = np.zeros(1)
+        t_loss = 0
+        t_imgnum = 0
+        accuracy = 0
+        recall = 0
+        precision = 0
+        TN = 0
+        TP = 0
+        FN = 0
+        FP = 0
         epoch = 1
 
         for step, (image, label) in pbar:
@@ -379,23 +408,92 @@ class Trainer():
                 input = image
                 y_pred = model(input).squeeze()
                 label = label.to(torch.int64)
-            self.test_sample_visualization(y_pred, label, step)
-            accuracies, ious = self.evaluation_for_semantic_segmentation(y_pred, label)
-            temp_acc, temp_iou, temp_imgnum = np.zeros(1), np.zeros(1), np.zeros(1)
-            for i in range(image.shape[0]):
-                temp_acc += accuracies[i]
-                temp_iou += ious[i]
-                t_acc += accuracies[i]
-                t_iou += ious[i]
-            t_imgnum += image.shape[0]
-            temp_imgnum += image.shape[0]
+            y_pred = y_pred.detach().cpu().numpy()
+            label = label.detach().cpu().numpy()
+            t_imgnum += y_pred.shape[0]
+            y_pred = np.argmax(y_pred, axis=1)
+            y_pred = np.around(y_pred)
+            for i in range(len(y_pred)):
+                if y_pred[i] == 0 and label[i] == 0:
+                    TN += 1
+                elif y_pred[i] == 0 and label[i] >= 1:
+                    FN += 1
+                elif y_pred[i] >= 1 and label[i] == 0:
+                    FP += 1
+                elif y_pred[i] == 1 and label[i] == 1:
+                    TP += 1
+                elif y_pred[i] == 2 and label[i] == 2:
+                    TP += 1
         if self.is_master:
-            self.writer.add_scalar("ACC/test", t_acc / t_imgnum, epoch)
-            self.writer.add_scalar('IoU/test', t_iou / t_imgnum)
+            accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
+            recall = (TP) / (TP + FN + 0.000001)
+            precision = (TP) / (TP + FP + 0.000001)
+            self.writer.add_scalar("ACC/test", accuracy, epoch)
+            self.writer.add_scalar('Precision/test', precision, epoch)
+            self.writer.add_scalar('Recall/test', recall, epoch)
             self.writer.flush()
             
-        return t_acc / t_imgnum, t_iou / t_imgnum
+        return accuracy, recall, precision
 
+    def inference(self):
+        # settings
+        model = self.build_model()
+        optimizer = self.build_optimizer(model)
+        saver = self.build_saver(model, optimizer, self.scaler)
+        checkpoint_path = '/home/ddl/git/template/outputs/save/1_class_segmentation/Unet_efficientnet_B2_lr_0.0001]/Semantic_segmentation_class_1_training_with_complicate_augmentation(5-fold)/checkpoint/top/001st_checkpoint_epoch_158.pth.tar'
+        saver.load_for_inference(model, self.rank, checkpoint_path)
+        train_dl, train_sampler,valid_dl, valid_sampler, test_dl, test_sampler= self.build_dataloader()
+        # inference
+        pbar = tqdm(
+            enumerate(test_dl),
+            bar_format='{desc:<15}{percentage:3.0f}%|{bar:18}{r_bar}', 
+            total=len(test_dl),
+            disable=not self.is_master
+            ) # set progress bar
+        t_loss = 0
+        t_imgnum = 0
+        accuracy = 0
+        recall = 0
+        precision = 0
+        TN = 0
+        TP = 0
+        FN = 0
+        FP = 0
+        epoch = 1
+
+        for step, (image, label) in pbar:
+            image = image.to(device=self.rank, non_blocking=True).float()
+            label = label.to(device=self.rank, non_blocking=True).float()
+            with self.amp_autocast():
+                input = image
+                y_pred = model(input).squeeze()
+                label = label.to(torch.int64)
+            y_pred = y_pred.detach().cpu().numpy()
+            label = label.detach().cpu().numpy()
+            t_imgnum += y_pred.shape[0]
+            y_pred = np.argmax(y_pred, axis=1)
+            y_pred = np.around(y_pred)
+            for i in range(len(y_pred)):
+                if y_pred[i] == 0 and label[i] == 0:
+                    TN += 1
+                elif y_pred[i] == 0 and label[i] >= 1:
+                    FN += 1
+                elif y_pred[i] >= 1 and label[i] == 0:
+                    FP += 1
+                elif y_pred[i] == 1 and label[i] == 1:
+                    TP += 1
+                elif y_pred[i] == 2 and label[i] == 2:
+                    TP += 1
+        if self.is_master:
+            accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
+            recall = (TP) / (TP + FN + 0.000001)
+            precision = (TP) / (TP + FP + 0.000001)
+            self.writer.add_scalar("ACC/test", accuracy, epoch)
+            self.writer.add_scalar('Precision/test', precision, epoch)
+            self.writer.add_scalar('Recall/test', recall, epoch)
+            self.writer.flush()
+            
+        return accuracy, recall, precision
 
 
 
@@ -407,8 +505,9 @@ class Trainer():
         elif self.conf.base.mode == 'finetuning':
             pass
         elif self.conf.base.mode == 'test':
-            test_acc, test_iou = self.test()
-            print('test_acc:',test_acc, 'test_iou', test_iou)
+            test_acc, test_recall, test_precision = self.test()
+            print('test_acc:',test_acc, 'test_precision', test_precision, 'test_recall', test_recall)
+
 
 
 def set_seed(conf):
@@ -420,7 +519,7 @@ def set_seed(conf):
         np.random.seed(conf.base.seed)
         torch.manual_seed(conf.base.seed)
         torch.cuda.manual_seed(conf.base.seed)
-        torch.cuda.manual_seed_all(conf.base.seed)  # if use multi-G
+        #torch.cuda.manual_seed_all(conf.base.seed)  # if use multi-G
         torch.backends.cudnn.deterministic = True
 
 
@@ -450,5 +549,3 @@ def main(conf: DictConfig) -> None:
 
 if __name__ == '__main__':
     main()
-
-

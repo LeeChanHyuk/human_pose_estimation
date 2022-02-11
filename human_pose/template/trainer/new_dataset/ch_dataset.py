@@ -24,7 +24,7 @@ class ch_dataset(torch.utils.data.Dataset):
         self.data, self.labels = self.get_data()
 
     def __len__(self):
-        return self.length
+        return len(self.data)
 
     def get_data(self):
         data_file_names = os.listdir(self.data_path)
@@ -32,8 +32,8 @@ class ch_dataset(torch.utils.data.Dataset):
         data = []
         labels = []
         neutral = 0
-        yaw = 0
-        pitch = 0
+        yaw_count = 0
+        pitch_count = 0
         sequence_length = 30
         for file in data_file_names:
             f = open(os.path.join(self.data_path, file), 'r')
@@ -42,33 +42,32 @@ class ch_dataset(torch.utils.data.Dataset):
                 if not line: break
                 yaw, pitch, roll, label = line.strip().split(' ')
                 yaw, pitch, roll = float(yaw), float(pitch), float(roll)
-                if label == 'N' and (yaw > 0):
-                    motion = yaw - int(yaw / 3)
-                    neutral = yaw - motion
-                    for i in range(neutral):
-                        labels.append(0)
-                    for i in range(motion):
-                        labels.append(1)
-                    yaw = 0
-                elif label == 'N' and (pitch>0):
-                    motion = pitch - int(pitch / 3)
-                    neutral = pitch - motion
-                    for i in range(neutral):
-                        labels.append(0)
-                    for i in range(motion):
-                        labels.append(2)
-                    pitch = 0
-                elif label == 'Y':
-                    yaw += 1
-                elif label == 'P':
-                    pitch += 1
+                if label == 'Yaw+':
+                    labels.append(1)
+                elif label == 'Yaw-':
+                    labels.append(2)
+                elif label == 'Pitch+':
+                    labels.append(3)
+                elif label == 'Pitch-':
+                    labels.append(4)
+                elif label == 'Roll+':
+                    labels.append(5)
+                elif label == 'Roll-':
+                    labels.append(6)
                 else:
                     labels.append(0)
                 temp_data.append([yaw, pitch, roll])
-            for i in range(len(temp_data) - (sequence_length-1)):
-                data.append(temp_data[i:i+sequence_length])
-            labels = labels[(sequence_length-1):]
-        return np.array(data), np.array(label)
+        temp_data = np.array(temp_data)
+        temp_data[:,0] = (temp_data[:,0] - min(temp_data[:,0])) / max(temp_data[:,0])
+        temp_data[:,1] = (temp_data[:,1] - min(temp_data[:,1])) / max(temp_data[:,1])
+        temp_data[:,2] = (temp_data[:,2] - min(temp_data[:,2])) / max(temp_data[:,2])
+        for i in range(len(temp_data) - (sequence_length-1)):
+            data.append(temp_data[i:i+sequence_length])
+        labels = labels[(sequence_length-1):]
+        #slice_num = slice(0,len(data),2)
+        #data = data[slice_num]
+        #labels = labels[slice_num]
+        return np.array(data), np.array(labels)
                 
 
     # data augmentation is conducted in here because of probability of augmentation method
