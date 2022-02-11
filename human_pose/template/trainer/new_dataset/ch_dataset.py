@@ -58,9 +58,7 @@ class ch_dataset(torch.utils.data.Dataset):
                     labels.append(0)
                 temp_data.append([yaw, pitch, roll])
         temp_data = np.array(temp_data)
-        temp_data[:,0] = (temp_data[:,0] - min(temp_data[:,0])) / max(temp_data[:,0])
-        temp_data[:,1] = (temp_data[:,1] - min(temp_data[:,1])) / max(temp_data[:,1])
-        temp_data[:,2] = (temp_data[:,2] - min(temp_data[:,2])) / max(temp_data[:,2])
+        temp_data = self.data_normalization(temp_data)
         for i in range(len(temp_data) - (sequence_length-1)):
             data.append(temp_data[i:i+sequence_length])
         labels = labels[(sequence_length-1):]
@@ -68,6 +66,11 @@ class ch_dataset(torch.utils.data.Dataset):
         #data = data[slice_num]
         #labels = labels[slice_num]
         return np.array(data), np.array(labels)
+
+    def data_normalization(self, data : np.array):
+        for i in range(data.shape[-1]):
+            data[:,i] = (data[:,i] - min(data[:,i])) / max(data[:,i])
+        return data
                 
 
     # data augmentation is conducted in here because of probability of augmentation method

@@ -35,7 +35,12 @@ class PositionalEmbedding(nn.Module):
         self.sequence_length = sequence_length
         self.CLS_Token = nn.Parameter(torch.randn(1, 1, self.d_model, requires_grad=True), requires_grad=True)
         self.positional_embedding = nn.Embedding(self.sequence_length+1, self.d_model)
-        nn.init.xavier_normal_(self.CLS_Token)
+        self.init_weights()
+
+    def init_weights(self) -> None:
+        initrange = 0.1
+        self.CLS_Token.data.uniform_(-initrange, initrange)
+        self.positional_embedding.weight.data.uniform_(-initrange, initrange)
 
     def forward(self, x: Tensor) -> Tensor:
         positions = torch.arange(start=0, end=self.sequence_length+1, dtype=torch.long, device=0)
@@ -88,12 +93,14 @@ class ActionTransformer1(nn.Module):
                  nlayers: int, dropout: float = 0.5, mlp_size: int = 256, classes: int = 7):
         super().__init__()
         self.model_type = 'Transformer'
-        self.d_model = 64 * nhead
+        self.d_model = 2 * nhead
         self.d_hid = self.d_model * 4
         self.positional_encoder = PositionalEmbedding(self.d_model, sequence_length)
         encoder_layers = nn.TransformerEncoderLayer(self.d_model, nhead, self.d_hid, dropout)
         self.transformer_encoder = nn.TransformerEncoder(encoder_layers, nlayers)
         self.temp_encoder = nn.Linear(ntoken, self.d_model)
+        self.encoder1 = nn.Linear(ntoken,ntoken)
+        self.encoder2 = nn.Linear(ntoken, self.d_model)
         self.encoder = nn.Embedding(ntoken, self.d_model)
         self.dense_layer1 = nn.Linear(self.d_model, mlp_size)
         self.dense_layer2 = nn.Linear(mlp_size, classes)
@@ -103,6 +110,9 @@ class ActionTransformer1(nn.Module):
     def init_weights(self) -> None:
         initrange = 0.1
         self.encoder.weight.data.uniform_(-initrange, initrange)
+        self.temp_encoder.weight.data.uniform_(-initrange, initrange)
+        self.dense_layer1.weight.data.uniform_(-initrange, initrange)
+        self.dense_layer2.weight.data.uniform_(-initrange, initrange)
 
     def forward(self, src: Tensor) -> Tensor:
         """
@@ -115,7 +125,8 @@ class ActionTransformer1(nn.Module):
         """
         # CLS Token만 추가 필요
  #       src = self.temp_encoder(src) * math.sqrt(self.d_model)
-        src = self.temp_encoder(src)
+        src = self.encoder1(src)
+        src = self.encoder2(src)
         src = self.positional_encoder(src)
         encoder_output = self.transformer_encoder(src)
         encoder_output = encoder_output[:,0,:]
