@@ -1,11 +1,13 @@
 from turtle import forward
 from unicodedata import bidirectional
+from cv2 import repeat
 from importlib_metadata import requires
 import torch.nn as nn
 import torch
 from torch import Tensor
 import math
 from . import transformer
+from torchvision import transforms
 
 class PositionalEncoding(nn.Module):
 
@@ -33,9 +35,11 @@ class PositionalEmbedding(nn.Module):
         super().__init__()
         self.d_model = d_model
         self.sequence_length = sequence_length
-        self.CLS_Token = nn.Parameter(torch.randn(1, 1, self.d_model, requires_grad=True), requires_grad=True)
+        self.CLS_Token = nn.Parameter(torch.zeros(1, 1, self.d_model))
         self.positional_embedding = nn.Embedding(self.sequence_length+1, self.d_model)
-        self.init_weights()
+        self.position_embeddings = nn.Parameter(torch.zeros(1, self.sequence_length+1, self.d_model))
+        self.positions = torch.arange(start=0, end=self.sequence_length+1, dtype=torch.long, device='cuda')
+        #self.init_weights()
 
     def init_weights(self) -> None:
         initrange = 0.1
@@ -43,12 +47,11 @@ class PositionalEmbedding(nn.Module):
         self.positional_embedding.weight.data.uniform_(-initrange, initrange)
 
     def forward(self, x: Tensor) -> Tensor:
-        positions = torch.arange(start=0, end=self.sequence_length+1, dtype=torch.long, device=0)
-        cls_tokens = self.CLS_Token.repeat_interleave(x.shape[0], dim=0) # this token is appended to frist block of the sequence. It must be repeat with batch_size
-        inputs = torch.cat((cls_tokens, x), axis=1)
-        positional_embeddings = self.positional_embedding(positions)
-        inputs += positional_embeddings
-        return inputs
+        cls_tokens = self.CLS_Token.expand(x.shape[0], -1, -1).requires_grad_()
+        x = torch.cat((cls_tokens, x), dim=1)
+        positional_embeddings = self.positional_embedding(self.positions)
+        x += positional_embeddings
+        return x
 
 class TransformerModel(nn.Module):
 
@@ -93,18 +96,16 @@ class ActionTransformer1(nn.Module):
                  nlayers: int, dropout: float = 0.5, mlp_size: int = 256, classes: int = 7):
         super().__init__()
         self.model_type = 'Transformer'
-        self.d_model = 2 * nhead
+        self.d_model = 64 * nhead
         self.d_hid = self.d_model * 4
         self.positional_encoder = PositionalEmbedding(self.d_model, sequence_length)
         encoder_layers = nn.TransformerEncoderLayer(self.d_model, nhead, self.d_hid, dropout)
         self.transformer_encoder = nn.TransformerEncoder(encoder_layers, nlayers)
         self.temp_encoder = nn.Linear(ntoken, self.d_model)
-        self.encoder1 = nn.Linear(ntoken,ntoken)
-        self.encoder2 = nn.Linear(ntoken, self.d_model)
-        self.encoder = nn.Embedding(ntoken, self.d_model)
+        self.encoder = nn.Linear(ntoken, self.d_model)
         self.dense_layer1 = nn.Linear(self.d_model, mlp_size)
         self.dense_layer2 = nn.Linear(mlp_size, classes)
-
+        self.lambda_function = transforms.Lambda(lambd=lambda x: x[:,0,:])
         self.init_weights()
 
     def init_weights(self) -> None:
@@ -114,7 +115,7 @@ class ActionTransformer1(nn.Module):
         self.dense_layer1.weight.data.uniform_(-initrange, initrange)
         self.dense_layer2.weight.data.uniform_(-initrange, initrange)
 
-    def forward(self, src: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         """
         Args:
             src: Tensor, shape [seq_len, batch_size]
@@ -125,13 +126,14 @@ class ActionTransformer1(nn.Module):
         """
         # CLS Token만 추가 필요
  #       src = self.temp_encoder(src) * math.sqrt(self.d_model)
-        src = self.encoder1(src)
-        src = self.encoder2(src)
-        src = self.positional_encoder(src)
-        encoder_output = self.transformer_encoder(src)
-        encoder_output = encoder_output[:,0,:]
-        output = self.dense_layer1(encoder_output)
-        output = self.dense_layer2(output)
+        x = self.encoder(x)
+        x = self.positional_encoder(x)
+        x = self.transformer_encoder(x)
+        x = self.lambda_function(x)
+        #encoder_output = encoder_output[:,0,:]
+        x = self.dense_layer1(x)
+        output = self.dense_layer2(x)
+        #print(self.encoder.weight)
         return output
 
 

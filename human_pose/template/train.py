@@ -5,6 +5,8 @@ import logging
 import datetime
 import random
 from matplotlib.pyplot import axis
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import numpy as np
 import copy
 import argparse
@@ -180,7 +182,7 @@ class Trainer():
                 label = label.to(torch.long)
                 loss = criterion(y_pred, label).float()
                 #loss.requires_grad = True
-            optimizer.zero_grad(set_to_none=True)
+            optimizer.zero_grad()
             
             if self.scaler is None:
                 loss.backward()
@@ -189,6 +191,7 @@ class Trainer():
                 self.scaler.scale(loss).backward()
                 self.scaler.step(optimizer)
                 self.scaler.update()
+            #self.plot_grad_flow(model.named_parameters())
             y_pred = y_pred.detach().cpu().numpy()
 
             label = label.detach().cpu().numpy()
@@ -309,7 +312,6 @@ class Trainer():
         # return loss, accuracy
         #return t_loss / t_imgnum, t_acc / t_imgnum, t_iou / t_imgnum, dl
         return t_loss/ t_imgnum, accuracy, dl
-
 
     def train_eval(self):
         model = self.build_model()

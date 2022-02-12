@@ -34,7 +34,7 @@ class ch_dataset(torch.utils.data.Dataset):
         neutral = 0
         yaw_count = 0
         pitch_count = 0
-        sequence_length = 30
+        sequence_length = self.conf['sequence_length']
         for file in data_file_names:
             f = open(os.path.join(self.data_path, file), 'r')
             while 1:

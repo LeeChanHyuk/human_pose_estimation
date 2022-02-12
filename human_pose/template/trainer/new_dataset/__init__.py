@@ -9,7 +9,10 @@ import torch.utils.data
 import torch
 import torchvision
 import torchvision.transforms as transforms
+import mpose
+from sklearn.model_selection import train_test_split
 from torch.utils.data.dataset import random_split
+from torch.utils.data import TensorDataset
 
 def create(conf, local_rank, world_size, mode='train'):
 
@@ -39,6 +42,34 @@ def create(conf, local_rank, world_size, mode='train'):
             train=False,
             transform=transforms.ToTensor(),
             download=True)
+    elif conf[mode]['name'] == 'openpose':
+        if mode == 'train':
+            X_train, y_train, X_test, y_test = load_mpose('openpose', 1, verbose=False)
+            X_train, X_val, y_train, y_val = train_test_split(X_train, y_train,
+                                                            test_size=0.1,
+                                                            random_state=11331,
+                                                            stratify=y_train)
+            tensor_x = torch.Tensor(X_train) # transform to torch tensor
+            tensor_y = torch.Tensor(y_train)
+            temp_dataset = TensorDataset(tensor_x,tensor_y) # create your datset
+        elif mode == 'valid':
+            X_train, y_train, X_test, y_test = load_mpose('openpose', 1, verbose=False)
+            X_train, X_val, y_train, y_val = train_test_split(X_train, y_train,
+                                                            test_size=0.1,
+                                                            random_state=11331,
+                                                            stratify=y_train)
+            tensor_x = torch.Tensor(X_val) # transform to torch tensor
+            tensor_y = torch.Tensor(y_val)
+            temp_dataset = TensorDataset(tensor_x,tensor_y) # create your datset
+        else:
+            X_train, y_train, X_test, y_test = load_mpose('openpose', 1, verbose=False)
+            X_train, X_val, y_train, y_val = train_test_split(X_train, y_train,
+                                                            test_size=0.1,
+                                                            random_state=11331,
+                                                            stratify=y_train)
+            tensor_x = torch.Tensor(X_test) # transform to torch tensor
+            tensor_y = torch.Tensor(y_test)
+            temp_dataset = TensorDataset(tensor_x,tensor_y) # create your datset
         
     sampler = torch.utils.data.distributed.DistributedSampler(
             temp_dataset, 
@@ -57,3 +88,17 @@ def create(conf, local_rank, world_size, mode='train'):
     )
 
     return dataloader, sampler
+
+def load_mpose(dataset, split, verbose=False):
+    dataset = mpose.MPOSE(pose_extractor=dataset, 
+                    split=split, 
+                    preprocess=None, 
+                    velocities=True, 
+                    remove_zip=False,
+                    verbose=verbose)
+    dataset.reduce_keypoints()
+    dataset.scale_and_center()
+    dataset.remove_confidence()
+    dataset.flatten_features()
+    
+    return dataset.get_data()

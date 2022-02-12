@@ -1,23 +1,26 @@
 train:
-  name : 'dataset'
-  dataset_path : '/home/ddl/git/human_pose_estimation/human_pose/dataset/train'
+  name : 'openpose'
+  dataset_path : '/media/ddl/새 볼륨/Git/human_pose_estimation/human_pose/dataset/train'
   drop_last : True
   batch_size : 512
   sampling_interval : 1
+  sequence_length : 30
 
 valid:
-  name : 'dataset'
-  dataset_path : '/home/ddl/git/human_pose_estimation/human_pose/dataset/train'
+  name : 'openpose'
+  dataset_path : '/media/ddl/새 볼륨/Git/human_pose_estimation/human_pose/dataset/train'
   drop_last : True
   batch_size : 512
   sampling_interval : 1
+  sequence_length : 30
 
 test:
-  name : 'dataset'
-  dataset_path : '/home/ddl/git/human_pose_estimation/human_pose/dataset/test'
+  name : 'openpose'
+  dataset_path : '/media/ddl/새 볼륨/Git/human_pose_estimation/human_pose/dataset/test'
   drop_last : True
   batch_size : 512
   sampling_interval : 1
+  sequence_length : 30
 #train:
 #  name : 'dataset'
 #  dataset_path : '/content/drive/MyDrive/template/dataset/cell_dataset/train'

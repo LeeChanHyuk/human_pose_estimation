@@ -3,7 +3,7 @@ defaults:
   - architecture: action_transformer
   - dataset: ch_dataset
   - loss: ce
-  - optimizer: sgd
+  - optimizer: adamw
   - hyperparameter: toy
   - scheduler: CosineAnnealingLR
   - saver: default_saver
@@ -20,7 +20,7 @@ base:
   save_dir: ./test
   resume: False
   debug: True
-  wandb: True
+  wandb: False
 
 MASTER_ADDR: '127.0.0.3'
 MASTER_PORT: '9095'
