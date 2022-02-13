@@ -4,6 +4,7 @@ import sys
 import logging
 import datetime
 import random
+from tkinter import Y
 from matplotlib.pyplot import axis
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
@@ -197,24 +198,15 @@ class Trainer():
             label = label.detach().cpu().numpy()
             t_imgnum += y_pred.shape[0]
             t_loss += (loss.item() * y_pred.shape[0])
+
+            accuracy, recall, precision, TN, FN, TP, FP = self.evaluation(y_pred, label, TN, FN, TP, FP)
+
             y_pred = np.argmax(y_pred, axis=1)
             y_pred = np.around(y_pred)
             accuracy_from_scikit_learn += (accuracy_score(label,y_pred) * y_pred.shape[0])
-            for i in range(len(y_pred)):
-                if y_pred[i] == 0 and label[i] == 0:
-                    TN += 1
-                elif y_pred[i] == 0 and label[i] >= 1:
-                    FN += 1
-                elif y_pred[i] >= 1 and label[i] == 0:
-                    FP += 1
-                elif y_pred[i] == label[i]:
-                    TP += 1
 
             if step % 100 == 0:
-                accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
                 accuracy_sci = accuracy_from_scikit_learn / t_imgnum
-                recall = (TP) / (TP + FN + 0.000001)
-                precision = (TP) / (TP + FP + 0.000001)
                 pbar.set_postfix({'train_Acc':accuracy, 'train_acc2':accuracy_sci,'recall':recall, 'precision':precision, 'train_Loss':round(loss.item(),2)})
         
         #torch.distributed.reduce(counter, 0)
@@ -273,22 +265,10 @@ class Trainer():
             label = label.detach().cpu().numpy()
             t_imgnum += y_pred.shape[0]
             t_loss += (loss.item() * y_pred.shape[0])
-            y_pred = np.argmax(y_pred, axis=1)
-            y_pred = np.around(y_pred)
-            for i in range(len(y_pred)):
-                if y_pred[i] == 0 and label[i] == 0:
-                    TN += 1
-                elif y_pred[i] == 0 and label[i] >= 1:
-                    FN += 1
-                elif y_pred[i] >= 1 and label[i] == 0:
-                    FP += 1
-                elif y_pred[i] == label[i]:
-                    TP += 1
+
+            accuracy, recall, precision, TN, FN, TP, FP = self.evaluation(y_pred, label, TN, FN, TP, FP)
 
             if step % 100 == 0:
-                accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
-                recall = (TP) / (TP + FN + 0.000001)
-                precision = (TP) / (TP + FP + 0.000001)
                 pbar.set_postfix({'Valid_Acc':accuracy, 'recall':recall, 'precision':precision, 'valid_Loss':round(loss.item(),2) / t_imgnum})
         
         #torch.distributed.reduce(counter, 0)
@@ -409,21 +389,8 @@ class Trainer():
             y_pred = y_pred.detach().cpu().numpy()
             label = label.detach().cpu().numpy()
             t_imgnum += y_pred.shape[0]
-            y_pred = np.argmax(y_pred, axis=1)
-            y_pred = np.around(y_pred)
-            for i in range(len(y_pred)):
-                if y_pred[i] == 0 and label[i] == 0:
-                    TN += 1
-                elif y_pred[i] == 0 and label[i] >= 1:
-                    FN += 1
-                elif y_pred[i] >= 1 and label[i] == 0:
-                    FP += 1
-                elif y_pred[i] == label[i]:
-                    TP += 1
+            accuracy, recall, precision, TN, FN, TP, FP = self.evaluation(y_pred, label, TN, FN, TP, FP)
         if self.is_master:
-            accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
-            recall = (TP) / (TP + FN + 0.000001)
-            precision = (TP) / (TP + FP + 0.000001)
             self.writer.add_scalar("ACC/test", accuracy, epoch)
             self.writer.add_scalar('Precision/test', precision, epoch)
             self.writer.add_scalar('Recall/test', recall, epoch)
@@ -462,35 +429,39 @@ class Trainer():
             label = label.to(device=self.rank, non_blocking=True).float()
             with self.amp_autocast():
                 input = image
-                
                 y_pred = model(input).squeeze()
                 label = label.to(torch.int64)
             y_pred = y_pred.detach().cpu().numpy()
             label = label.detach().cpu().numpy()
             t_imgnum += y_pred.shape[0]
-            y_pred = np.argmax(y_pred, axis=1)
-            y_pred = np.around(y_pred)
-            for i in range(len(y_pred)):
-                if y_pred[i] == 0 and label[i] == 0:
-                    TN += 1
-                elif y_pred[i] == 0 and label[i] >= 1:
-                    FN += 1
-                elif y_pred[i] >= 1 and label[i] == 0:
-                    FP += 1
-                elif y_pred[i] == 1 and label[i] == 1:
-                    TP += 1
-                elif y_pred[i] == 2 and label[i] == 2:
-                    TP += 1
+            accuracy, recall, precision, TN, FN, TP, FP = self.evaluation(y_pred, label, TN, FN, TP, FP)
         if self.is_master:
-            accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
-            recall = (TP) / (TP + FN + 0.000001)
-            precision = (TP) / (TP + FP + 0.000001)
             self.writer.add_scalar("ACC/test", accuracy, epoch)
             self.writer.add_scalar('Precision/test', precision, epoch)
             self.writer.add_scalar('Recall/test', recall, epoch)
             self.writer.flush()
             
         return accuracy, recall, precision
+
+    
+    def evaluation(self, y_pred: np.array, label: np.array, TN, FN, TP ,FP):
+        y_pred = np.argmax(y_pred, axis=1)
+        y_pred = np.around(y_pred)
+        for i in range(len(y_pred)):
+            if y_pred[i] == 0 and label[i] == 0:
+                TN += 1
+            elif y_pred[i] == 0 and label[i] >= 1:
+                FN += 1
+            elif y_pred[i] == label[i]:
+                TP += 1
+            else:
+                FP += 1
+
+        accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
+        recall = (TP) / (TP + FN + 0.000001)
+        precision = (TP) / (TP + FP + 0.000001)
+        
+        return accuracy, recall, precision, TN, FN, TP, FP
 
 
 
