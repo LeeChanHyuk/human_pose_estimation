@@ -207,9 +207,7 @@ class Trainer():
                     FN += 1
                 elif y_pred[i] >= 1 and label[i] == 0:
                     FP += 1
-                elif y_pred[i] == 1 and label[i] == 1:
-                    TP += 1
-                elif y_pred[i] == 2 and label[i] == 2:
+                elif y_pred[i] == label[i]:
                     TP += 1
 
             if step % 100 == 0:
@@ -284,9 +282,7 @@ class Trainer():
                     FN += 1
                 elif y_pred[i] >= 1 and label[i] == 0:
                     FP += 1
-                elif y_pred[i] == 1 and label[i] == 1:
-                    TP += 1
-                elif y_pred[i] == 2 and label[i] == 2:
+                elif y_pred[i] == label[i]:
                     TP += 1
 
             if step % 100 == 0:
@@ -422,9 +418,7 @@ class Trainer():
                     FN += 1
                 elif y_pred[i] >= 1 and label[i] == 0:
                     FP += 1
-                elif y_pred[i] == 1 and label[i] == 1:
-                    TP += 1
-                elif y_pred[i] == 2 and label[i] == 2:
+                elif y_pred[i] == label[i]:
                     TP += 1
         if self.is_master:
             accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)

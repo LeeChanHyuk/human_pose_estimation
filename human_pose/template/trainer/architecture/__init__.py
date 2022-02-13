@@ -55,7 +55,7 @@ def create(conf, num_classes=None):
     elif base == 'action_transformer':
         if architecture_name == 'head_motion':
             order = conf['mode']
-            architecture = action_transformer.ActionTransformer1(
+            architecture = action_transformer.ActionTransformer2(
                 ntoken=conf['ntoken'],
                 nhead=conf['nhead'][order],
                 dropout=conf['dropout'][order],

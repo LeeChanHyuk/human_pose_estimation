@@ -1,5 +1,5 @@
 train:
-  name : 'openpose'
+  name : 'dataset'
   dataset_path : '/media/ddl/새 볼륨/Git/human_pose_estimation/human_pose/dataset/train'
   drop_last : True
   batch_size : 512
@@ -7,7 +7,7 @@ train:
   sequence_length : 30
 
 valid:
-  name : 'openpose'
+  name : 'dataset'
   dataset_path : '/media/ddl/새 볼륨/Git/human_pose_estimation/human_pose/dataset/train'
   drop_last : True
   batch_size : 512
@@ -15,7 +15,7 @@ valid:
   sequence_length : 30
 
 test:
-  name : 'openpose'
+  name : 'dataset'
   dataset_path : '/media/ddl/새 볼륨/Git/human_pose_estimation/human_pose/dataset/test'
   drop_last : True
   batch_size : 512
