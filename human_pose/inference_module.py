@@ -6,6 +6,7 @@ import os
 from template.trainer.architecture import action_transformer
 import yaml
 import numpy as np
+import time
 
 def build_model(num_classes=-1):
     with open("/media/ddl/새 볼륨/Git/human_pose_estimation/human_pose/template/conf/architecture/action_transformer.yaml") as f:
@@ -40,8 +41,11 @@ def load_for_inference(rank, checkpoint_name = None):
 def inference(pose_sequence):
     checkpoint_name = 'template/outputs/2022-02-13/00-38-37/checkpoint/top/001st_checkpoint_epoch_473.pth.tar'
     model = load_for_inference(0, checkpoint_name=checkpoint_name)
+    pose_sequence = data_normalization(pose_sequence)
     pose_sequence = torch.Tensor(pose_sequence).to(device='cuda')
+    start_time = time.time()
     y_pred = model(pose_sequence)
+    #print('model fps = ', str(1/(time.time() - start_time)))
     y_pred = y_pred.detach().cpu().numpy()
     y_pred = np.argmax(y_pred, axis=1)
     y_pred = np.around(y_pred)
@@ -61,3 +65,8 @@ def inference(pose_sequence):
     elif y_pred == 6:
         state = 'Roll-'
     return state
+
+def data_normalization(data : np.array):
+    for i in range(data.shape[-1]):
+        data[:,i] = (data[:,i] - min(data[:,i])) / max(data[:,i])
+    return data
