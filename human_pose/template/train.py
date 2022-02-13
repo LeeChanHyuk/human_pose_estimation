@@ -462,6 +462,7 @@ class Trainer():
             label = label.to(device=self.rank, non_blocking=True).float()
             with self.amp_autocast():
                 input = image
+                
                 y_pred = model(input).squeeze()
                 label = label.to(torch.int64)
             y_pred = y_pred.detach().cpu().numpy()

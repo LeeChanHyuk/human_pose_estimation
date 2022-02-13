@@ -25,6 +25,7 @@ import pyrealsense2 as rs
 import utils
 import visualization_tool
 from Stabilizer.stabilizer import Stabilizer
+from inference_module import inference
 
 only_detection_mode = False
 
@@ -37,12 +38,13 @@ mp_face_mesh = mp.solutions.face_mesh
 
 use_realsense = False
 use_video = True
-annotation = True
-visualization = True
-text_visualization = True
+annotation = False
+visualization = False
+text_visualization = False
 body_pose_estimation = False
 head_pose_estimation = True # 12 프레임 저하
 gaze_estimation = False # 22프레임 저하
+inference_mode = True
 
 
 
@@ -128,6 +130,11 @@ def main(color=(224, 255, 255)):
         head_pose_txt = open(pose_txt_name, 'w')
         state = 'N'
     
+    if inference_mode:
+        body_poses = []
+        head_poses = []
+        gaze_poses = []
+    
     # Initialization step
     fa = service.DepthFacialLandmarks(os.path.join(base_path, "head_pose_estimation_module/weights/sparse_face.tflite"))
     #fa = service.DenseFaceReconstruction(os.path.join(base_path, "head_pose_estimation_module/weights/dense_face.tflite"))
@@ -190,7 +197,7 @@ def main(color=(224, 255, 255)):
                 # Start streaming
                 pipeline.start(config)
             elif use_video:
-                video_path = os.path.join(base_path, 'test_dataset.avi')
+                video_path = os.path.join(base_path, 'save.avi')
                 cap = cv2.VideoCapture(video_path)
                 length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
                 print('Video length is ' + str(length))
@@ -202,7 +209,7 @@ def main(color=(224, 255, 255)):
             # Load the frame from webcam
             while True:
                 start_time = time.time()
-                a = cv2.waitKey(10)
+                #a = cv2.waitKey(10)
                 if use_realsense:
                     frames = pipeline.wait_for_frames()
                     align_frames = align.process(frames)
@@ -273,9 +280,11 @@ def main(color=(224, 255, 255)):
                             pitch = head_pose_stabilizers[0].state[0][0]
                             yaw = head_pose_stabilizers[1].state[0][0]
                             roll = head_pose_stabilizers[2].state[0][0]
-                            line = str(yaw)+' '+str(pitch) + ' ' + str(roll) + ' ' + state + '\n'
-                            head_pose_txt.write(line)
-                            write_count += 1
+                            if annotation:
+                                line = str(yaw)+' '+str(pitch) + ' ' + str(roll) + ' ' + state + '\n'
+                                head_pose_txt.write(line)
+                            if inference_mode:
+                                head_poses.append([yaw, pitch, roll])
                             
 
 
@@ -304,6 +313,8 @@ def main(color=(224, 255, 255)):
                         right_x = right_eye_pose_stabilizers[0].state[0][0]
                         right_y = right_eye_pose_stabilizers[1].state[0][0]
                         gazes = [[left_x, left_y], [right_x, right_y]]
+                        if inference_mode:
+                            gaze_poses.append(gazes)
 
                 if body_pose_estimation:
                     # Estimate body pose
@@ -347,6 +358,8 @@ def main(color=(224, 255, 255)):
                             upper_body_pitch = body_pose_stabilizers[0].state[0][0]
                             upper_body_yaw = body_pose_stabilizers[1].state[0][0]
                             upper_body_roll = body_pose_stabilizers[2].state[0][0]
+                            if inference_mode:
+                                body_poses.append([upper_body_yaw, upper_body_pitch, upper_body_roll])
 
                 # Visualization
                 if visualization:
@@ -410,9 +423,15 @@ def main(color=(224, 255, 255)):
 
 
                     # Flip the image horizontally for a selfie-view display.
-                    #cv2.imshow('MediaPipe Pose1', frame)
-                    cv2.imshow('MediaPipe Pose2', stacked_frame)
+                    #cv2.imshow('MediaPipe Pose2', stacked_frame)
 
+                if head_pose_estimation and inference_mode:
+                    if len(head_poses) >=30:
+                        head_poses = head_poses[-30:]
+                        inputs = np.expand_dims(np.array(head_poses),axis=0)
+                        human_state = inference(inputs)
+                        cv2.putText(frame, human_state, (100, 100), 1, 2, (0, 0, 0), 3)
+                cv2.imshow('MediaPipe Pose1', frame)
                     # Check the FPS
                 #print('fps = ', 1/(time.time() - start_time))
                 pressed_key = cv2.waitKey(1)

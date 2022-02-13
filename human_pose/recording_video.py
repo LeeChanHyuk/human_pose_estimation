@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import time
 
-cap = cv2.VideoCapture(4)
+cap = cv2.VideoCapture(0)
 
 print('width :%d, height : %d' % (cap.get(3), cap.get(4)))
 fourcc = cv2.VideoWriter_fourcc(*'DIVX')
