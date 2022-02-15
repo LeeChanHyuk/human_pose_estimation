@@ -51,26 +51,33 @@ checkpoint_name = 'outputs/2022-02-15/10-33-40/checkpoint/top/001st_checkpoint_e
 model = load_for_inference(0, checkpoint_name=checkpoint_name)
 
 def inference(pose_sequence):
+    threshold = 0.5
     pose_sequence = torch.Tensor(pose_sequence).to(device='cuda')
     start_time = time.time()
     y_pred = model(pose_sequence)
+    y_pred = torch.softmax(y_pred, dim=1)
     #print('model fps = ', str(1/(time.time() - start_time)))
     y_pred = y_pred.detach().cpu().numpy()
+    probability = np.max(y_pred)
+    print(probability)
     y_pred = np.argmax(y_pred, axis=1)
     y_pred = np.around(y_pred)
     y_pred = y_pred[0]
-    if y_pred == 0:
-        state = 'Yaw+'
-    elif y_pred == 2:
-        state = 'Yaw-'
-    elif y_pred == 3:
-        state = 'Pitch+'
-    elif y_pred == 5:
-        state = 'Pitch-'
-    elif y_pred == 4:
-        state = 'Roll+'
-    elif y_pred == 1:
-        state = 'Roll-'
+    if probability > threshold:
+        if y_pred == 0:
+            state = 'Yaw+'
+        elif y_pred == 2:
+            state = 'Yaw-'
+        elif y_pred == 3:
+            state = 'Pitch+'
+        elif y_pred == 5:
+            state = 'Pitch-'
+        elif y_pred == 4:
+            state = 'Roll+'
+        elif y_pred == 1:
+            state = 'Roll-'
+    else:
+        state = 'standard'
 
     return state
 

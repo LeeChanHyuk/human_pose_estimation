@@ -37,15 +37,15 @@ mp_face_mesh = mp.solutions.face_mesh
 
 
 use_realsense = False
-use_video = True
+use_video = False
 annotation = False
 visualization = False
 text_visualization = False
 body_pose_estimation = False
 head_pose_estimation = True # 12 프레임 저하
 gaze_estimation = False # 22프레임 저하
-inference_mode = True
-real_time_inference_mode = False
+inference_mode = False
+real_time_inference_mode = True
 
 
 
