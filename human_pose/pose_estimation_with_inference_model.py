@@ -45,7 +45,7 @@ body_pose_estimation = False
 head_pose_estimation = True # 12 프레임 저하
 gaze_estimation = False # 22프레임 저하
 inference_mode = False
-real_time_inference_mode = True
+real_time_inference_mode = False
 
 
 
