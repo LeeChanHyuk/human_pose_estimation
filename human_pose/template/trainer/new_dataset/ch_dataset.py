@@ -1,5 +1,6 @@
 # init에서는 dataset을 create하는 함수를 만들어야지.
 import logging
+from matplotlib.pyplot import axis
 import torch
 import torchvision
 import torch.utils.data
@@ -24,51 +25,41 @@ class ch_dataset(torch.utils.data.Dataset):
         self.data, self.labels = self.get_data()
 
     def __len__(self):
-        return self.length
+        return len(self.data)
 
     def get_data(self):
-        data_file_names = os.listdir(self.data_path)
-        temp_data= []
         data = []
         labels = []
-        neutral = 0
-        yaw = 0
-        pitch = 0
-        sequence_length = 30
-        for file in data_file_names:
-            f = open(os.path.join(self.data_path, file), 'r')
-            while 1:
-                line = f.readline()
-                if not line: break
-                yaw, pitch, roll, label = line.strip().split(' ')
-                yaw, pitch, roll = float(yaw), float(pitch), float(roll)
-                if label == 'N' and (yaw > 0):
-                    motion = yaw - int(yaw / 3)
-                    neutral = yaw - motion
-                    for i in range(neutral):
-                        labels.append(0)
-                    for i in range(motion):
-                        labels.append(1)
-                    yaw = 0
-                elif label == 'N' and (pitch>0):
-                    motion = pitch - int(pitch / 3)
-                    neutral = pitch - motion
-                    for i in range(neutral):
-                        labels.append(0)
-                    for i in range(motion):
-                        labels.append(2)
-                    pitch = 0
-                elif label == 'Y':
-                    yaw += 1
-                elif label == 'P':
-                    pitch += 1
-                else:
-                    labels.append(0)
-                temp_data.append([yaw, pitch, roll])
-            for i in range(len(temp_data) - (sequence_length-1)):
-                data.append(temp_data[i:i+sequence_length])
-            labels = labels[(sequence_length-1):]
-        return np.array(data), np.array(label)
+        normalize_length = 3
+        for index, action in enumerate(os.listdir(self.data_path)):
+            index = int(action[0])
+            for pose in os.listdir(os.path.join(self.data_path, action)):
+                poses_from_one_video = np.load(os.path.join(self.data_path, action, pose))
+                normalized_pose = []
+                for i in range(poses_from_one_video.shape[-1]):
+                    i_all = poses_from_one_video[:,i]
+                    i_1 = i_all[0:len(i_all):3]
+                    i_2 = i_all[1:len(i_all):3]
+                    i_3 = i_all[2:len(i_all):3]
+                    while len(i_1) < 20:
+                        i_1 = np.concatenate([i_1, np.expand_dims(np.array(i_1[-1]), axis=0)], axis=0)
+                    while len(i_2) < 20:
+                        i_2 = np.concatenate([i_2, np.expand_dims(np.array(i_2[-1]), axis=0)], axis=0)
+                    while len(i_3) < 20:
+                        i_3 = np.concatenate([i_3, np.expand_dims(np.array(i_3[-1]), axis=0)], axis=0)
+                    i_all = (i_2 + i_2 + i_3) / 3
+                    normalized_pose.append(i_all)
+                normalized_pose = np.array(normalized_pose).transpose()
+                normalized_pose = self.data_normalization(normalized_pose)
+                data.append(normalized_pose)
+                labels.append(index)
+
+        return np.array(data), np.array(labels)
+
+    def data_normalization(self, data : np.array):
+        for i in range(data.shape[-1]):
+            data[:,i] = (data[:,i] - min(data[:,i])) / (max(data[:,i] - min(data[:,i])))
+        return data
                 
 
     # data augmentation is conducted in here because of probability of augmentation method
