@@ -5,7 +5,6 @@ from torch import nn
 from . import toy
 LOGGER = logging.getLogger(__name__)
 from efficientnet_pytorch import EfficientNet
-# from .efficientv2 import EffNetV2
 from timm.models import create_model
 import segmentation_models_pytorch as smp
 from . import lstm
