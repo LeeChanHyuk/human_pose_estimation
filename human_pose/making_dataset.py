@@ -3,17 +3,17 @@ import numpy as np
 import time
 
 # initialize
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(4)
 frame_count = 1
 name_count = 0
 fourcc = cv2.VideoWriter_fourcc(*'DIVX')
-actions = [ 'pitch-', 'roll-', 'roll+']
+actions = [ 'standard']
 
 # print the information of the camera
 print('width :%d, height : %d' % (cap.get(3), cap.get(4)))
 
 for action in actions:
-    while name_count < 99:
+    while name_count < 299:
         out = cv2.VideoWriter(action +'_'+ str(name_count)+'.avi', fourcc, 30.0, (640, 480))
         while frame_count < 60:
             ret, frame = cap.read()

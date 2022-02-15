@@ -1,4 +1,4 @@
-classes: 7
+classes: 6
 d_hid:
 - 64
 - 128
@@ -14,7 +14,7 @@ mlp_size:
 - 256
 - 256
 - 512
-mode: 3
+mode: 0
 nhead:
 - 1
 - 2
@@ -26,5 +26,5 @@ nlayers:
 - 6
 - 6
 ntoken: 3
-sequence_length: 30
+sequence_length: 20
 type: action_transformer/head_motion

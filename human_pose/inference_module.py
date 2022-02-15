@@ -1,15 +1,24 @@
+from audioop import minmax
 from distutils.command.build import build
 import torch
 import torch.nn as nn
 import torch.distributed as dist
 import os
 from template.trainer.architecture import action_transformer
+from torch.nn.parallel import DistributedDataParallel as DDP
 import yaml
 import numpy as np
 import time
 
 def build_model(num_classes=-1):
-    with open("/media/ddl/새 볼륨/Git/human_pose_estimation/human_pose/template/conf/architecture/action_transformer.yaml") as f:
+    os.environ['MASTER_ADDR'] = '127.0.0.3'
+    os.environ['MASTER_PORT'] = '9095'
+    dist.init_process_group(
+        backend='nccl', world_size=1, init_method='env://',
+        rank=0
+    )
+    base_path = os.getcwd()
+    with open(os.path.join(base_path, "template/conf/architecture/action_transformer.yaml")) as f:
         list_doc = yaml.load(f.read(), Loader=yaml.FullLoader)
         order = list_doc['mode']
         architecture = action_transformer.ActionTransformer2(
@@ -22,7 +31,7 @@ def build_model(num_classes=-1):
             list_doc['classes']
         )
         model = architecture.to('cuda', non_blocking=True)
-        #model = DDP(model, device_ids=[self.rank], output_device=self.rank, find_unused_parameters=True)
+        model = DDP(model, device_ids=[0], output_device=0, find_unused_parameters=True)
         return model
     return None
 
@@ -34,14 +43,14 @@ def load_for_inference(rank, checkpoint_name = None):
     checkpoint_path = os.path.join(base_path, checkpoint_name)
     # Load state_dict
     checkpoint = torch.load(checkpoint_path, map_location=map_location)
-    model.load_state_dict(checkpoint['model'])
+    model.module.load_state_dict(checkpoint['model'])
     model.eval()
     return model
 
+checkpoint_name = 'outputs/2022-02-15/10-33-40/checkpoint/top/001st_checkpoint_epoch_56.pth.tar'
+model = load_for_inference(0, checkpoint_name=checkpoint_name)
+
 def inference(pose_sequence):
-    checkpoint_name = 'template/outputs/2022-02-13/00-38-37/checkpoint/top/001st_checkpoint_epoch_473.pth.tar'
-    model = load_for_inference(0, checkpoint_name=checkpoint_name)
-    pose_sequence = data_normalization(pose_sequence)
     pose_sequence = torch.Tensor(pose_sequence).to(device='cuda')
     start_time = time.time()
     y_pred = model(pose_sequence)
@@ -51,22 +60,22 @@ def inference(pose_sequence):
     y_pred = np.around(y_pred)
     y_pred = y_pred[0]
     if y_pred == 0:
-        state = 'standard'
-    elif y_pred == 1:
         state = 'Yaw+'
     elif y_pred == 2:
         state = 'Yaw-'
     elif y_pred == 3:
         state = 'Pitch+'
-    elif y_pred == 4:
-        state = 'Pitch-'
     elif y_pred == 5:
+        state = 'Pitch-'
+    elif y_pred == 4:
         state = 'Roll+'
-    elif y_pred == 6:
+    elif y_pred == 1:
         state = 'Roll-'
+
     return state
 
 def data_normalization(data : np.array):
     for i in range(data.shape[-1]):
-        data[:,i] = (data[:,i] - min(data[:,i])) / max(data[:,i])
+        min_max = max(data[:,i]) - min(data[:,i])
+        data[:,i] = (data[:,i] - min(data[:,i])) / min_max
     return data

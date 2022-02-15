@@ -9,7 +9,6 @@
 
 import argparse
 from cgitb import text
-from lib2to3.pytree import BasePattern
 import math
 from ssl import ALERT_DESCRIPTION_NO_RENEGOTIATION
 from turtle import right
@@ -22,6 +21,7 @@ import os
 import mediapipe as mp
 import numpy as np
 import pyrealsense2 as rs
+import re
 import utils
 import visualization_tool
 from Stabilizer.stabilizer import Stabilizer
@@ -45,6 +45,7 @@ body_pose_estimation = False
 head_pose_estimation = True # 12 프레임 저하
 gaze_estimation = False # 22프레임 저하
 inference_mode = True
+real_time_inference_mode = False
 
 
 
@@ -118,19 +119,39 @@ def upside_body_pose_calculator(left_shoulder, right_shoulder, center_hip):
         roll = theta
     return yaw, pitch, roll
 
-def main(color=(224, 255, 255)):
+def data_normalization(data : np.array):
+    for i in range(data.shape[-1]):
+        data[:,i] = (data[:,i] - min(data[:,i])) / (max(data[:,i] - min(data[:,i])))
+    return data
+
+def data_preprocessing(data: np.array) -> np.array:
+    normalized_pose = []
+    for i in range(data.shape[-1]):
+        i_all = data[:,i]
+        i_1 = i_all[0:len(i_all):3]
+        i_2 = i_all[1:len(i_all):3]
+        i_3 = i_all[2:len(i_all):3]
+        while len(i_1) < 20:
+            i_1 = np.concatenate([i_1, np.expand_dims(np.array(i_1[-1]), axis=0)], axis=0)
+        while len(i_2) < 20:
+            i_2 = np.concatenate([i_2, np.expand_dims(np.array(i_2[-1]), axis=0)], axis=0)
+        while len(i_3) < 20:
+            i_3 = np.concatenate([i_3, np.expand_dims(np.array(i_3[-1]), axis=0)], axis=0)
+        i_all = (i_2 + i_2 + i_3) / 3
+        normalized_pose.append(i_all)
+    normalized_pose = np.array(normalized_pose).transpose()
+    normalized_pose = data_normalization(normalized_pose)
+    return normalized_pose
+ 
+def main(color=(224, 255, 255), video_path = 'save.avi', save_path = 'data'):
     base_path = os.getcwd()
     write_count = 0
     if annotation:
-        pose_txt_name = 'head_pose_'
-        count = 0
-        while os.path.exists(os.path.join(base_path, pose_txt_name + str(count)+'.txt')):
-            count += 1
-        pose_txt_name = pose_txt_name + str(count) + '.txt'
-        head_pose_txt = open(pose_txt_name, 'w')
-        state = 'N'
+        body_poses = []
+        head_poses = []
+        gaze_poses = []
     
-    if inference_mode:
+    if inference_mode or real_time_inference_mode:
         body_poses = []
         head_poses = []
         gaze_poses = []
@@ -183,7 +204,7 @@ def main(color=(224, 255, 255)):
         with mp_face_mesh.FaceMesh(
             max_num_faces=1,
             min_detection_confidence=0.5) as face_mesh:
-            #try:
+            #try
             print('Camera settings is started')
             # Create a context object. This object owns the handles to all connected realsense devices
             if use_realsense:
@@ -197,12 +218,11 @@ def main(color=(224, 255, 255)):
                 # Start streaming
                 pipeline.start(config)
             elif use_video:
-                video_path = os.path.join(base_path, 'save.avi')
                 cap = cv2.VideoCapture(video_path)
                 length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
                 print('Video length is ' + str(length))
             else:
-                cap = cv2.VideoCapture(0)
+                cap = cv2.VideoCapture(4)
 
             print('Camera settings is initialized')
 
@@ -281,9 +301,8 @@ def main(color=(224, 255, 255)):
                             yaw = head_pose_stabilizers[1].state[0][0]
                             roll = head_pose_stabilizers[2].state[0][0]
                             if annotation:
-                                line = str(yaw)+' '+str(pitch) + ' ' + str(roll) + ' ' + state + '\n'
-                                head_pose_txt.write(line)
-                            if inference_mode:
+                                head_poses.append([yaw, pitch, roll])
+                            if inference_mode or real_time_inference_mode:
                                 head_poses.append([yaw, pitch, roll])
                             
 
@@ -313,8 +332,10 @@ def main(color=(224, 255, 255)):
                         right_x = right_eye_pose_stabilizers[0].state[0][0]
                         right_y = right_eye_pose_stabilizers[1].state[0][0]
                         gazes = [[left_x, left_y], [right_x, right_y]]
+                        if annotation:
+                            gaze_poses.append([gazes[0][0], gazes[0][1], gazes[1][0], gazes[1][1]])
                         if inference_mode:
-                            gaze_poses.append(gazes)
+                            gaze_poses.append([gazes[0][0], gazes[0][1], gazes[1][0], gazes[1][1]])
 
                 if body_pose_estimation:
                     # Estimate body pose
@@ -358,6 +379,8 @@ def main(color=(224, 255, 255)):
                             upper_body_pitch = body_pose_stabilizers[0].state[0][0]
                             upper_body_yaw = body_pose_stabilizers[1].state[0][0]
                             upper_body_roll = body_pose_stabilizers[2].state[0][0]
+                            if annotation:
+                                body_poses.append([upper_body_yaw, upper_body_pitch, upper_body_roll])
                             if inference_mode:
                                 body_poses.append([upper_body_yaw, upper_body_pitch, upper_body_roll])
 
@@ -425,43 +448,59 @@ def main(color=(224, 255, 255)):
                     # Flip the image horizontally for a selfie-view display.
                     #cv2.imshow('MediaPipe Pose2', stacked_frame)
 
-                if head_pose_estimation and inference_mode:
-                    if len(head_poses) >=30:
-                        head_poses = head_poses[-30:]
-                        inputs = np.expand_dims(np.array(head_poses),axis=0)
+                if head_pose_estimation and (inference_mode or real_time_inference_mode):
+                    if len(head_poses) >=58:
+                        head_poses = head_poses[-58:]
+                        data = data_preprocessing(np.array(head_poses))
+                        inputs = np.expand_dims(np.array(data),axis=0)
                         human_state = inference(inputs)
                         cv2.putText(frame, human_state, (100, 100), 1, 2, (0, 0, 0), 3)
                 cv2.imshow('MediaPipe Pose1', frame)
                     # Check the FPS
                 #print('fps = ', 1/(time.time() - start_time))
                 pressed_key = cv2.waitKey(1)
-                if annotation:
-                    if pressed_key == 27:
-                        break
-                    elif pressed_key == ord('n'):
-                        state = 'N'
-                    elif pressed_key == ord('q'):
-                        state = 'Yaw-'
-                    elif pressed_key == ord('w'):
-                        state = 'Yaw+'
-                    elif pressed_key == ord('a'):
-                        state = 'Pitch+'
-                    elif pressed_key == ord('s'):
-                        state = 'Pitch-'
-                    elif pressed_key == ord('z'):
-                        state = 'Roll-'
-                    elif pressed_key == ord('x'):
-                        state = 'Roll+'
-                else:
-                    if pressed_key == 27:
-                        break
+                if pressed_key == 27:
+                    break
 
             #except Exception as e:
             #    print('Error is occurred')
             #    print(e)
             #    pass
     if annotation:
-        head_pose_txt.close()
+        if head_pose_estimation:
+            head_poses = np.array(head_poses)
+        if body_pose_estimation:
+            body_poses = np.array(body_poses)
+        if gaze_estimation:
+            gaze_poses = np.array(gaze_poses)
+        if not os.path.exists(os.path.join(base_path, save_path)):
+            os.mkdir(os.path.join(base_path, save_path))
+        video_name = video_path.split('/')[-1]
+        numbers = re.sub(r'[^0-9]', '', video_name)
+        np.save(os.path.join(base_path, save_path, numbers), head_poses)
 
 if __name__ == "__main__":
-    main()
+    if annotation:
+        base_path = os.getcwd()
+        actions = ['yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+']
+        for action in actions:
+            video_folder_path = os.path.join(base_path, 'videos', action)
+            for video in os.listdir(video_folder_path):
+                main(
+                    video_path = os.path.join(video_folder_path, video),
+                    save_path = 'data/' + action
+                    )
+    elif inference_mode:
+        base_path = os.getcwd()
+        actions = ['yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+']
+        for action in actions:
+            video_folder_path = os.path.join(base_path, 'test_video', action)
+            for video in os.listdir(video_folder_path):
+                main(
+                    video_path = os.path.join(video_folder_path, video),
+                    save_path = 'data/' + action
+                    )
+    elif real_time_inference_mode:
+        main()
+    else:
+        main()
