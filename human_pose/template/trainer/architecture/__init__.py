@@ -9,6 +9,7 @@ from timm.models import create_model
 import segmentation_models_pytorch as smp
 from . import lstm
 from . import action_transformer
+from . import graph_neural_network
 def create(conf, num_classes=None):
     base, architecture_name = [l.lower() for l in conf['type'].split('/')]
     print('model = ',base,architecture_name)

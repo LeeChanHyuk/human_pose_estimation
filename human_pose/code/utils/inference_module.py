@@ -49,7 +49,7 @@ def load_for_inference(rank, checkpoint_name = None):
     model.eval()
     return model
 
-checkpoint_name = 'outputs/2022-02-15/19-38-58/checkpoint/top/001st_checkpoint_epoch_70.pth.tar'
+checkpoint_name = 'outputs/2022-02-15/20-16-30/checkpoint/top/001st_checkpoint_epoch_70.pth.tar'
 model = load_for_inference(0, checkpoint_name=checkpoint_name)
 results = [0, 0, 0]
 
