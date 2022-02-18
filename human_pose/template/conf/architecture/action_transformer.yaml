@@ -1,4 +1,4 @@
-classes: 7
+classes: 18
 d_hid:
 - 64
 - 128
@@ -25,6 +25,6 @@ nlayers:
 - 5
 - 6
 - 6
-ntoken: 3
+ntoken: 25
 sequence_length: 20
 type: action_transformer/head_motion
