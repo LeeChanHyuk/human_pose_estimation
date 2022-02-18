@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from template.trainer.architecture.GNN.GAN_layers import GraphAttentionLayer, SpGraphAttentionLayer
+from .GAN_layers import GraphAttentionLayer, SpGraphAttentionLayer
 
 
 class GAT(nn.Module):

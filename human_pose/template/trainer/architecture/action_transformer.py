@@ -8,6 +8,8 @@ from torch import Tensor
 import math
 from . import transformer
 from torchvision import transforms
+from GNN.GAN_models import GAT
+import numpy as np
 
 class PositionalEncoding(nn.Module):
 
@@ -173,6 +175,65 @@ class ActionTransformer2(nn.Module):
         """
         # CLS Token만 추가 필요
  #       src = self.temp_encoder(src) * math.sqrt(self.d_model)
+        x = self.encoder(x)
+        x = self.positional_encoder(x)
+        x = self.transformer_encoder(x, None)
+        x = self.lambda_function(x)
+        #encoder_output = encoder_output[:,0,:]
+        x = self.dense_layer1(x)
+        output = self.dense_layer2(x)
+        #print(self.encoder.weight)
+        return output
+
+class ActionTransformer3(nn.Module):
+
+    def __init__(self, ntoken: int, nhead: int, sequence_length: int,
+                 nlayers: int, dropout: float = 0.5, mlp_size: int = 256, classes: int = 7):
+        super().__init__()
+        self.model_type = 'Transformer'
+        self.d_model = 64 * nhead
+        self.d_hid = self.d_model * 4
+        self.positional_encoder = PositionalEmbedding(self.d_model, sequence_length)
+        self.transformer_encoder = transformer.Encoder(self.d_model, self.d_hid, nhead, nlayers, 0.1, 'cuda')
+        self.temp_encoder = nn.Linear(ntoken, self.d_model)
+        self.encoder = nn.Linear(ntoken, self.d_model)
+        self.dense_layer1 = nn.Linear(self.d_model, mlp_size)
+        self.dense_layer2 = nn.Linear(mlp_size, classes)
+        self.lambda_function = transforms.Lambda(lambd=lambda x: x[:,0,:])
+        self.adjacency_matrix = torch.from_numpy(np.array(
+            [0,1,0,0,0],
+            [1,1,1,1,0],
+            [1,0,1,0,1],
+            [1,0,0,1,1],
+            [0,0,1,1,1]
+        ))
+        """GAT Hyper parameters
+        alpha = 0.1, 0.2, 0.3
+        nhid = 16, 32, 64
+        """
+        self.GAN = GAT(nfeat=3,nhid=64, nclass=5, dropout=0.1, alpha=0.2, nheads=3)
+        self.init_weights()
+        
+
+    def init_weights(self) -> None:
+        initrange = 0.1
+        self.encoder.weight.data.uniform_(-initrange, initrange)
+        self.temp_encoder.weight.data.uniform_(-initrange, initrange)
+        self.dense_layer1.weight.data.uniform_(-initrange, initrange)
+        self.dense_layer2.weight.data.uniform_(-initrange, initrange)
+
+    def forward(self, x: Tensor) -> Tensor:
+        """
+        Args:
+            src: Tensor, shape [seq_len, batch_size]
+            src_mask: Tensor, shape [seq_len, seq_len]
+
+        Returns:
+            output Tensor of shape [seq_len, batch_size, ntoken]
+        """
+        # CLS Token만 추가 필요
+ #       src = self.temp_encoder(src) * math.sqrt(self.d_model)
+        x = self.GAN(x, self.adjacency_matrix)
         x = self.encoder(x)
         x = self.positional_encoder(x)
         x = self.transformer_encoder(x, None)

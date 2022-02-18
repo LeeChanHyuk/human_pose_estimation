@@ -64,6 +64,16 @@ def create(conf, num_classes=None):
                 nlayers=conf['nlayers'][order],
                 sequence_length=conf['sequence_length']
             ) # cls token 관련이 빠져있음. vector 중 0번째만 남기거나 이런게.
+        elif architecture_name== 'GCN':
+            architecture_name = action_transformer.ActionTransformer3(
+                ntoken=conf['ntoken'],
+                nhead=conf['nhead'][order],
+                dropout=conf['dropout'][order],
+                mlp_size=conf['mlp_size'][order],
+                classes=conf['classes'],
+                nlayers=conf['nlayers'][order],
+                sequence_length=conf['sequence_length']
+            )
     elif base == 'unet':
         architecture = smp.Unet(
         encoder_name=conf['backbone'],      # choose encoder, e.g. mobilenet_v2 or efficientnet-b7
