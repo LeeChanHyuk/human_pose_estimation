@@ -8,7 +8,7 @@ from torch import Tensor
 import math
 from . import transformer
 from torchvision import transforms
-from GNN.GAN_models import GAT
+from .GNN.GAN_models import GAT
 import numpy as np
 
 class PositionalEncoding(nn.Module):
@@ -233,7 +233,7 @@ class ActionTransformer3(nn.Module):
         """
         # CLS Token만 추가 필요
  #       src = self.temp_encoder(src) * math.sqrt(self.d_model)
-        x = self.GAN(x, self.adjacency_matrix)
+        #x = self.GAN(x, self.adjacency_matrix)
         x = self.encoder(x)
         x = self.positional_encoder(x)
         x = self.transformer_encoder(x, None)

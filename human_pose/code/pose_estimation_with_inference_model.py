@@ -9,16 +9,19 @@
 
 import argparse
 from cgitb import text
+from lib2to3.pytree import BasePattern
 import math
 from ssl import ALERT_DESCRIPTION_NO_RENEGOTIATION
 from turtle import right
 import cv2
 import time
 import os
+from matplotlib.pyplot import fill
 import mediapipe as mp
 import numpy as np
 import pyrealsense2 as rs
 import re
+import random
 
 from utils.draw_utils import draw_axis
 import utils.visualization_tool as visualization_tool
@@ -42,13 +45,13 @@ mp_face_mesh = mp.solutions.face_mesh
 
 
 use_realsense = False
-use_video = False
+use_video = True
 annotation = False
-visualization = False
-text_visualization = False
-body_pose_estimation = False
+visualization = True
+text_visualization = True
+body_pose_estimation = True
 head_pose_estimation = True # 12 프레임 저하
-gaze_estimation = False # 22프레임 저하
+gaze_estimation = True # 22프레임 저하
 inference_mode = True
 
 landmark_names = [
@@ -70,18 +73,37 @@ landmark_names = [
     'left_foot_index', 'right_foot_index',
 ]
 
-def main(color=(224, 255, 255), video_path = 'save.avi', save_path = 'data'):
+def fill_the_blank(poses):
+    if len(poses) > 0:
+        poses.append(poses[-1])
+    else:
+        poses.append([0, 0, 0, 0])
+    return poses
+
+def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 'save.avi', save_path = 'data'):
     base_path = os.getcwd()
     write_count = 0
     if annotation:
         body_poses = []
         head_poses = []
         gaze_poses = []
+        center_eyes = []
+        center_mouths = []
+        left_shoulders = []
+        right_shoulders = []
+        center_stomachs = []
     
     if inference_mode:
         body_poses = []
         head_poses = []
         gaze_poses = []
+        center_eyes = []
+        center_mouths = []
+        left_shoulders = []
+        right_shoulders = []
+        center_stomachs = []
+    
+    yaw, pitch, roll = 0, 0, 0
     
     # Initialization step
     fa = service.DepthFacialLandmarks(os.path.join(base_path, "code/head_pose_estimation_module/weights/sparse_face.tflite"))
@@ -144,17 +166,19 @@ def main(color=(224, 255, 255), video_path = 'save.avi', save_path = 'data'):
                 # Start streaming
                 pipeline.start(config)
             elif use_video:
-                cap = cv2.VideoCapture(video_path)
-                length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                rgb_cap = cv2.VideoCapture(rgb_video_path)
+                depth_cap = cv2.VideoCapture(depth_video_path)
+                length = int(rgb_cap.get(cv2.CAP_PROP_FRAME_COUNT))
                 print('Video length is ' + str(length))
             else:
-                cap = cv2.VideoCapture(4)
+                cap = cv2.VideoCapture(0)
 
             print('Camera settings is initialized')
 
             # Load the frame from webcam
             while True:
                 start_time = time.time()
+                all_estimation_is_successed = True
                 #a = cv2.waitKey(10)
                 if use_realsense:
                     frames = pipeline.wait_for_frames()
@@ -168,6 +192,11 @@ def main(color=(224, 255, 255), video_path = 'save.avi', save_path = 'data'):
                     # Convert images to numpy arrays
                     depth = np.array(depth.get_data())
                     frame = np.array(frame.get_data())
+                elif use_video:
+                    ret, frame = rgb_cap.read()
+                    ret, depth = depth_cap.read()
+                    if frame is None:
+                        break
                 else:
                     ret, frame = cap.read()
                     if frame is None:
@@ -177,6 +206,8 @@ def main(color=(224, 255, 255), video_path = 'save.avi', save_path = 'data'):
                 cv2.waitKey(1)
                 if depth.shape != frame.shape:
                     frame = cv2.resize(frame, dsize=(depth.shape[1], depth.shape[0]), interpolation=cv2.INTER_AREA)
+
+                depth = depth * 20
 
                 # frame shape for return normalized bounding box info
                 height, width = frame.shape[:2]
@@ -212,9 +243,9 @@ def main(color=(224, 255, 255), video_path = 'save.avi', save_path = 'data'):
                             roll = head_pose_stabilizers[2].state[0][0]
 
                             if annotation:
-                                head_poses.append([yaw, pitch, roll])
+                                head_poses.append([yaw, pitch, roll, 0])
                             if inference_mode:
-                                head_poses.append([yaw, pitch, roll])
+                                head_poses.append([yaw, pitch, roll, 0])
                             
                     # Estimate gaze
                     if gaze_estimation:
@@ -236,12 +267,30 @@ def main(color=(224, 255, 255), video_path = 'save.avi', save_path = 'data'):
                         right_x = right_eye_pose_stabilizers[0].state[0][0]
                         right_y = right_eye_pose_stabilizers[1].state[0][0]
                         gazes = [[left_x, left_y], [right_x, right_y]]
+
+
+                        center_eye_x = (left_eye_boxes[0][0] + left_eye_boxes[0][2]) / 2
+                        center_eye_y = (left_eye_boxes[0][1] + left_eye_boxes[0][3]) / 2
+                        if len(depth.shape) > 2:
+                            center_eye_z = depth[max(0, min(479, int(center_eye_y))), max(0, min(639, int(center_eye_x))), 0]
+                        else:
+                            center_eye_z = depth[max(0, min(479, int(center_eye_y))), max(0, min(639, int(center_eye_x)))]
+
+
                         if annotation:
                             gaze_poses.append([gazes[0][0], gazes[0][1], gazes[1][0], gazes[1][1]])
+                            center_eye = [center_eye_x, center_eye_y, center_eye_z, 0]
+                            center_eyes.append(center_eye)
                         if inference_mode:
                             gaze_poses.append([gazes[0][0], gazes[0][1], gazes[1][0], gazes[1][1]])
+                            center_eye = [center_eye_x, center_eye_y, center_eye_z, 0]
+                            center_eyes.append(center_eye)
                 else:
-                    continue
+                    if annotation or inference_mode:
+                        head_poses = fill_the_blank(head_poses)
+                        gaze_poses = fill_the_blank(gaze_poses)
+                        center_eyes = fill_the_blank(center_eyes)
+                        all_estimation_is_successed = False
 
                 if body_pose_estimation:
                     # Estimate body pose
@@ -251,28 +300,47 @@ def main(color=(224, 255, 255), video_path = 'save.avi', save_path = 'data'):
                         body_landmarks = np.array([[lmk.x * width, lmk.y * height, lmk.z * width]
                             for lmk in body_landmarks.landmark], dtype=np.float32)
                         
-                        left_shoulder, right_shoulder, center_stomach, left_x_offset, left_y_offset, right_x_offset, right_y_offset = body_pose_estimatior.body_keypoint_extractor(body_landmarks, landmark_names, depth, width, height)
+                        if use_video is False and use_realsense is False:
+                            normal_state = True
+                        else:
+                            normal_state = False
+                        left_shoulder, right_shoulder, center_stomach, center_mouth, left_x_offset, left_y_offset, right_x_offset, right_y_offset = body_pose_estimatior.body_keypoint_extractor(body_landmarks, landmark_names, depth, width, height, normal_camera=normal_state)
                         upper_body_yaw, upper_body_pitch, upper_body_roll = body_pose_estimatior.upside_body_pose_calculator(left_shoulder, right_shoulder, center_stomach)
-                        if upper_body_yaw:
-                            temp_upper_body_yaw = upper_body_yaw * 180 / math.pi
-                            temp_upper_body_pitch = upper_body_pitch * 180 / math.pi
-                            temp_upper_body_roll = upper_body_roll * 180 / math.pi
 
-                            body_pose_stabilizers[0].update([temp_upper_body_pitch])
-                            body_pose_stabilizers[1].update([temp_upper_body_yaw])
-                            body_pose_stabilizers[2].update([temp_upper_body_roll])
+                        if annotation or inference_mode:
+                            center_stomachs.append(np.append(center_stomach, [0], 0))
+                            center_mouths.append(np.append(center_mouth, [0], 0))
+                            left_shoulders.append(np.append(left_shoulder, [0], 0))
+                            right_shoulders.append(np.append(right_shoulder, [0], 0))
 
-                            upper_body_pitch = body_pose_stabilizers[0].state[0][0]
-                            upper_body_yaw = body_pose_stabilizers[1].state[0][0]
-                            upper_body_roll = body_pose_stabilizers[2].state[0][0]
+                        temp_upper_body_yaw = upper_body_yaw * 180 / math.pi
+                        temp_upper_body_pitch = upper_body_pitch * 180 / math.pi
+                        temp_upper_body_roll = upper_body_roll * 180 / math.pi
 
-                            if annotation:
-                                body_poses.append([upper_body_yaw, upper_body_pitch, upper_body_roll])
-                            if inference_mode:
-                                body_poses.append([upper_body_yaw, upper_body_pitch, upper_body_roll])
+                        body_pose_stabilizers[0].update([temp_upper_body_pitch])
+                        body_pose_stabilizers[1].update([temp_upper_body_yaw])
+                        body_pose_stabilizers[2].update([temp_upper_body_roll])
+
+                        upper_body_pitch = body_pose_stabilizers[0].state[0][0]
+                        upper_body_yaw = body_pose_stabilizers[1].state[0][0]
+                        upper_body_roll = body_pose_stabilizers[2].state[0][0]
+
+                        if annotation:
+                            body_poses.append([upper_body_yaw, upper_body_pitch, upper_body_roll, 0])
+                        if inference_mode:
+                            body_poses.append([upper_body_yaw, upper_body_pitch, upper_body_roll, 0])
+
+                    else:
+                        if annotation or inference_mode:
+                            body_poses = fill_the_blank(body_poses)
+                            center_stomachs = fill_the_blank(center_stomachs)
+                            center_mouths = fill_the_blank(center_mouths)
+                            left_shoulders = fill_the_blank(left_shoulders)
+                            right_shoulders = fill_the_blank(right_shoulders)
+                            all_estimation_is_successed = False
 
                 # Visualization
-                if visualization:
+                if visualization and all_estimation_is_successed:
                     # apply colormap to depthmap
                     depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth, alpha=0.03), cv2.COLORMAP_JET)
 
@@ -286,24 +354,23 @@ def main(color=(224, 255, 255), video_path = 'save.avi', save_path = 'data'):
                             mp_pose.POSE_CONNECTIONS,
                             landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style())
                         if left_shoulder is not None and right_shoulder is not None:
-                            if upper_body_yaw:
-                                frame = draw_axis(frame, upper_body_yaw, upper_body_pitch, upper_body_roll, [int((left_shoulder[0] + right_shoulder[0])/2), int(left_shoulder[1])],
-                                color1=(255,255,0), color2=(255,0,255), color3=(0,255,255))
+                            frame = draw_axis(frame, upper_body_yaw, upper_body_pitch, upper_body_roll, [int((left_shoulder[0] + right_shoulder[0])/2), int(left_shoulder[1])],
+                            color1=(255,255,0), color2=(255,0,255), color3=(0,255,255))
 
                     if head_pose_estimation and yaw:
                         #print('head pose yaw: ', yaw)
                         #print('head pose pitch: ', pitch)
                         #print('head pose roll: ', roll)
                         frame = draw_axis(frame, yaw, pitch, roll, [int((face_boxes[0][0] + face_boxes[0][2])/2), int(face_boxes[0][1] - 30)])
-                    
+                        cv2.rectangle(frame, (int(face_boxes[0][0]), int(face_boxes[0][1])), (int(face_boxes[0][2]), int(face_boxes[0][3])), (255, 0, 0,), 2, cv2.LINE_AA)
+
                     if gaze_estimation:
                         for i, ep in enumerate([left_eye, right_eye]):
                             for (x, y) in ep.landmarks[16:33]:
                                 color = (0, 255, 0)
                                 if ep.eye_sample.is_left:
                                     color = (255, 0, 0)
-                                cv2.circle(frame,
-                                            (int(round(x)), int(round(y))), 1, color, -1, lineType=cv2.LINE_AA)
+                                cv2.circle(frame,(int(round(x)), int(round(y))), 1, color, -1, lineType=cv2.LINE_AA)
                             gaze = gazes[i]
                             length = 60.0
                             draw_gaze(frame, ep.landmarks[-2], gaze, length=length, thickness=2)
@@ -319,29 +386,18 @@ def main(color=(224, 255, 255), video_path = 'save.avi', save_path = 'data'):
                             face_center_x = (face_boxes[0][0] + face_boxes[0][2]) / 2
                             face_center_y = (face_boxes[0][1] + face_boxes[0][3]) / 2
                             if len(depth.shape) > 2:
-                                face_center_z = depth[int(face_center_y), int(face_center_x), 0]
+                                face_center_z = depth[max(0, min(479, int(face_center_y))), max(0, min(639, int(face_center_x))), 0]
                             else:
-                                face_center_z = depth[int(face_center_y), int(face_center_x)]
+                                face_center_z = depth[max(0, min(479,int(face_center_y))), max(0, min(639,int(face_center_x)))]
                             zero_array = visualization_tool.draw_face_information(zero_array, width, height, round(face_center_x, 2), round(face_center_y, 2), round(face_center_z, 2), round(yaw, 2)
                             , round(pitch, 2), round(roll, 2))
                         if gaze_estimation and gazes is not None:
-                            center_eye_x = (left_eye_boxes[0][0] + left_eye_boxes[0][2]) / 2
-                            center_eye_y = (left_eye_boxes[0][1] + left_eye_boxes[0][3]) / 2
-                            center_eye_z = depth[int(center_eye_y), int(center_eye_x)]
                             zero_array = visualization_tool.draw_gaze_information(zero_array,width, height, round(center_eye_x, 2), round(center_eye_y, 2), round(center_eye_z, 2), gazes)
                         stacked_frame = np.concatenate([frame, zero_array], axis=1)
-
 
                     # Flip the image horizontally for a selfie-view display.
                     #cv2.imshow('MediaPipe Pose2', stacked_frame)
 
-                if head_pose_estimation and (inference_mode):
-                    if len(head_poses) >=58:
-                        head_poses = head_poses[-58:]
-                        data = preprocessing.data_preprocessing(np.array(head_poses))
-                        inputs = np.expand_dims(np.array(data),axis=0)
-                        human_state = inference(inputs)
-                        cv2.putText(frame, human_state, (100, 100), 1, 2, (0, 0, 0), 3)
                 cv2.imshow('MediaPipe Pose1', frame)
                     # Check the FPS
                 #print('fps = ', 1/(time.time() - start_time))
@@ -349,28 +405,94 @@ def main(color=(224, 255, 255), video_path = 'save.avi', save_path = 'data'):
                 if pressed_key == 27:
                     break
 
+    if head_pose_estimation and (inference_mode):
+        if len(head_poses) >=58:
+            output = [center_eyes, center_mouths, left_shoulders, right_shoulders, center_stomachs]
+            if head_pose_estimation:
+                head_poses = np.array(head_poses)
+                output.append(head_poses)
+            if body_pose_estimation:
+                body_poses = np.array(body_poses)
+                output.append(body_poses)
+            if gaze_estimation:
+                gaze_poses = np.array(gaze_poses)
+                output.append(gaze_poses)
+
+            # 총 25개의 features
+            output = np.array(output)
+            while output.shape[1] < 60:
+                output = np.append(output, output[:, -1, :].reshape(output.shape[0], 1, output.shape[2]), axis=1)
+            data = preprocessing.data_preprocessing(output)
+            inputs = np.expand_dims(np.array(data),axis=0)
+            human_state = inference(inputs)
+            cv2.putText(frame, human_state, (100, 100), 1, 2, (0, 0, 0), 3)
+
     if annotation:
+        output = [center_eyes, center_mouths, left_shoulders, right_shoulders, center_stomachs]
         if head_pose_estimation:
             head_poses = np.array(head_poses)
+            output.append(head_poses)
         if body_pose_estimation:
             body_poses = np.array(body_poses)
+            output.append(body_poses)
         if gaze_estimation:
             gaze_poses = np.array(gaze_poses)
+            output.append(gaze_poses)
+
+
+        # 총 25개의 features
+        output = np.array(output)
+        while output.shape[1] < 60:
+            output = np.append(output, output[:, -1, :].reshape(output.shape[0], 1, output.shape[2]), axis=1)
+        print(output.shape)
         if not os.path.exists(os.path.join(base_path, save_path)):
             os.mkdir(os.path.join(base_path, save_path))
-        video_name = video_path.split('/')[-1]
+        video_name = rgb_video_name.split('/')[-1]
         numbers = re.sub(r'[^0-9]', '', video_name)
-        np.save(os.path.join(base_path, save_path, numbers), head_poses)
+        np.save(os.path.join(base_path, save_path, numbers), output)
 
 if __name__ == "__main__":
     if annotation:
         base_path = os.getcwd()
-        actions = ['standard', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+']
+        actions = [ 'nolooking']
+        for index, action in enumerate(actions):
+            video_folder_path = os.path.join(base_path, 'dataset', 'train_video', str(18 + index) + '.' + action)
+            rgb_videos = []
+            depth_videos = []
+            for video in os.listdir(video_folder_path):
+                if 'depth' in video:
+                    depth_videos.append(video)
+                else:
+                    rgb_videos.append(video)
+            rgb_videos.sort()
+            depth_videos.sort()
+            for i in range(len(rgb_videos)):
+                rgb_video_name = rgb_videos[i]
+                depth_video_name = depth_videos[i]
+                main(
+                    rgb_video_path = os.path.join(video_folder_path, rgb_video_name),
+                    depth_video_path = os.path.join(video_folder_path, depth_video_name),
+                    save_path = 'dataset/train_npy/' + str(18 + index) + '.' + action
+                    )
+        actions = [ 'standard', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left_up', 'up',
+        'right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out','looking', 'nolooking']
         for index, action in enumerate(actions):
             video_folder_path = os.path.join(base_path, 'dataset', 'test_video', str(index) + '.' + action)
+            rgb_videos = []
+            depth_videos = []
             for video in os.listdir(video_folder_path):
+                if 'depth' in video:
+                    depth_videos.append(video)
+                else:
+                    rgb_videos.append(video)
+            rgb_videos.sort()
+            depth_videos.sort()
+            for i in range(len(rgb_videos)):
+                rgb_video_name = rgb_videos[i]
+                depth_video_name = depth_videos[i]
                 main(
-                    video_path = os.path.join(video_folder_path, video),
+                    rgb_video_path = os.path.join(video_folder_path, rgb_video_name),
+                    depth_video_path = os.path.join(video_folder_path, depth_video_name),
                     save_path = 'dataset/test_npy/' + str(index) + '.' + action
                     )
     elif inference_mode:
@@ -378,13 +500,40 @@ if __name__ == "__main__":
             main()
         else:
             base_path = os.getcwd()
-            actions = ['standard', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+']
+            actions = [ 'nolooking', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left_up', 'up',
+            'right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out','standard']
+            rgb_videos = []
+            depth_videos = []
+            # Video extraction from the test video folder
             for index, action in enumerate(actions):
                 video_folder_path = os.path.join(base_path, 'dataset', 'test_video', str(index) + '.' + action)
                 for video in os.listdir(video_folder_path):
-                    main(
-                        video_path = os.path.join(video_folder_path, video),
-                    save_path = 'dataset/test_npy/' + str(index) + '.' + action
-                        )
+                    if 'depth' in video:
+                        depth_videos.append(os.path.join(video_folder_path, video))
+                    else:
+                        rgb_videos.append(os.path.join(video_folder_path, video))
+
+            # Video sequence shuffle
+            length_array = np.arange(len(rgb_videos)).tolist()
+            random.shuffle(length_array)
+            rgb_videos = [rgb_videos[i] for i in length_array]
+            depth_videos = [depth_videos[i] for i in length_array]
+
+            for i in range(len(rgb_videos)):
+                main(
+                rgb_video_path=rgb_videos[i],
+                depth_video_path=depth_videos[i],
+                save_path = 'dataset/test_npy/' + str(index) + '.' + action
+                    )
+
+    elif use_video:
+        base_path = os.getcwd()
+        video_folder = 'dataset/test_video2'
+        action = 'looking_12.avi'
+        rgb_path = os.path.join(base_path, video_folder, action)
+        depth_action = 'looking_12_depth.avi'
+        depth_path =  os.path.join(base_path, video_folder, depth_action)
+        main(rgb_video_path= rgb_path, depth_video_path=depth_path)
+
     else:
         main()

@@ -49,11 +49,11 @@ def load_for_inference(rank, checkpoint_name = None):
     model.eval()
     return model
 
-checkpoint_name = 'outputs/2022-02-15/20-16-30/checkpoint/top/001st_checkpoint_epoch_70.pth.tar'
+checkpoint_name = '/home/ddl/git/human_pose_estimation/human_pose/outputs/2022-02-21/16-20-13/checkpoint/top/001st_checkpoint_epoch_123.pth.tar'
 model = load_for_inference(0, checkpoint_name=checkpoint_name)
-results = [0, 0, 0]
 
 def inference(pose_sequence):
+    results = [0, 0, 0]
     results[-3] = results[-2]
     results[-2] = results[-1]
     threshold = 0.5
@@ -69,24 +69,14 @@ def inference(pose_sequence):
     y_pred = np.around(y_pred)
     y_pred = y_pred[0]
     results[-1] = y_pred
-    if probability > threshold and (results[-1] == results[-2]) and (results[-2] == results[-3]):
-        if y_pred == 0:
-            state = 'standard'
-        elif y_pred == 1:
-            state = 'Yaw-'
-        elif y_pred == 2:
-            state = 'Yaw+'
-        elif y_pred == 3:
-            state = 'Pitch-'
-        elif y_pred == 4:
-            state = 'PItch+'
-        elif y_pred == 5:
-            state = 'Roll-'
-        elif y_pred == 6:
-            state = 'Roll+'
+    actions = [ 'nolooking', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left_up', 'up',
+    'right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out','standard']
+#    if probability > threshold and (results[-1] == results[-2]) and (results[-2] == results[-3]):
+    if probability > threshold:
+        state = actions[y_pred]
     else:
-        state = 'standard'
-
+        state = 'None'
+    print(state)
     return state
 
 def data_normalization(data : np.array):

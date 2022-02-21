@@ -1,6 +1,5 @@
 # init에서는 dataset을 create하는 함수를 만들어야지.
 import logging
-from aiohttp import BodyPartReader
 from matplotlib.pyplot import axis
 import torch
 import torchvision
@@ -79,10 +78,10 @@ class ch_dataset(torch.utils.data.Dataset):
                     while len(i_3) < all_poses.shape[0] / 3:
                         i_3 = np.concatenate([i_3, np.expand_dims(np.array(i_3[-1]), axis=0)], axis=0)
                     i_all = (i_2 + i_2 + i_3) / 3
-                    normalized_pose.append(i_all)
-                normalized_pose = np.array(normalized_pose).transpose()
-                normalized_pose = self.data_normalization(normalized_pose)
-                data.append(normalized_pose)
+                    normalized_poses.append(i_all)
+                normalized_poses = np.array(normalized_poses).transpose()
+                normalized_poses = self.data_normalization(normalized_poses)
+                data.append(normalized_poses)
                 labels.append(index)
 
         return np.array(data), np.array(labels)
@@ -94,7 +93,7 @@ class ch_dataset(torch.utils.data.Dataset):
 
     def data_normalization(self, data : np.array) -> np.array:
         for i in range(data.shape[-1]):
-            data[:, i] /= data[0, i]
+            data[:, i] -= data[0, i]
         return data
                 
 
