@@ -64,8 +64,9 @@ def create(conf, num_classes=None):
                 nlayers=conf['nlayers'][order],
                 sequence_length=conf['sequence_length']
             ) # cls token 관련이 빠져있음. vector 중 0번째만 남기거나 이런게.
-        elif architecture_name== 'GCN':
-            architecture_name = action_transformer.ActionTransformer3(
+        elif architecture_name== 'gcn':
+            order = conf['mode']
+            architecture = action_transformer.ActionTransformer3(
                 ntoken=conf['ntoken'],
                 nhead=conf['nhead'][order],
                 dropout=conf['dropout'][order],

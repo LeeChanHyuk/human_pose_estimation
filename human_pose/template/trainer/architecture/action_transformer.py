@@ -201,17 +201,17 @@ class ActionTransformer3(nn.Module):
         self.dense_layer2 = nn.Linear(mlp_size, classes)
         self.lambda_function = transforms.Lambda(lambd=lambda x: x[:,0,:])
         self.adjacency_matrix = torch.from_numpy(np.array(
-            [0,1,0,0,0],
+            [[0,1,0,0,0],
             [1,1,1,1,0],
             [1,0,1,0,1],
             [1,0,0,1,1],
-            [0,0,1,1,1]
+            [0,0,1,1,1]]
         ))
         """GAT Hyper parameters
         alpha = 0.1, 0.2, 0.3
         nhid = 16, 32, 64
         """
-        self.GAN = GAT(nfeat=3,nhid=64, nclass=5, dropout=0.1, alpha=0.2, nheads=3)
+        self.GAN = GAT(nfeat=3,nhid=64, nclass=5, dropout=0.1, alpha=0.2, nheads=3).to('cuda')
         self.init_weights()
         
 
@@ -233,7 +233,16 @@ class ActionTransformer3(nn.Module):
         """
         # CLS Token만 추가 필요
  #       src = self.temp_encoder(src) * math.sqrt(self.d_model)
-        #x = self.GAN(x, self.adjacency_matrix)
+        # (x = 5x3)
+        transitions = x[:,:,:15]
+        a, b, c, d, e = transitions[:,:,0:3], transitions[:,:,3:6], transitions[:,:,6:9], transitions[:,:,9:12],transitions[:,:,12:15]
+        sequences = []
+        for i in range(x.shape[1]):
+            a_i, b_i, c_i, d_i, e_i = a[:,i,:], b[:,i,:], c[:,i,:], d[:,i,:], e[:,i,:]
+            a_i, b_i, c_i, d_i, e_i = self.GAN(a_i, self.adjacency_matrix), self.GAN(b_i, self.adjacency_matrix), self.GAN(c_i, self.adjacency_matrix),
+            self.GAN(d_i, self.adjacency_matrix), self.GAN(e_i, self.adjacency_matrix)
+            sequences.append([a_i, b_i, c_i, d_i, e_i])
+
         x = self.encoder(x)
         x = self.positional_encoder(x)
         x = self.transformer_encoder(x, None)

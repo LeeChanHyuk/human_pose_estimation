@@ -49,7 +49,7 @@ def load_for_inference(rank, checkpoint_name = None):
     model.eval()
     return model
 
-checkpoint_name = '/home/ddl/git/human_pose_estimation/human_pose/outputs/2022-02-21/16-20-13/checkpoint/top/001st_checkpoint_epoch_123.pth.tar'
+checkpoint_name = '/media/ddl/새 볼륨/Git/human_pose_estimation/human_pose/outputs/2022-02-21/22-28-08/checkpoint/top/001st_checkpoint_epoch_77.pth.tar'
 model = load_for_inference(0, checkpoint_name=checkpoint_name)
 
 def inference(pose_sequence):

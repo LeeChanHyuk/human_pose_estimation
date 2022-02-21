@@ -105,15 +105,10 @@ class Trainer():
     # TODO: modulizaing
     def build_dataloader(self, ):
 
-        train_loader, train_sampler = trainer.new_dataset.create(conf = self.conf.dataset,
+        train_loader, train_sampler, valid_loader, valid_sampler = trainer.new_dataset.create(conf = self.conf.dataset,
         world_size=self.conf.base.world_size,
         local_rank=self.rank,
         mode = 'train')
-
-        valid_loader, valid_sampler = trainer.new_dataset.create(conf = self.conf.dataset,
-        world_size=self.conf.base.world_size,
-        local_rank=self.rank,
-        mode = 'valid')
 
         test_loader, test_sampler = trainer.new_dataset.create(conf = self.conf.dataset,
         world_size=self.conf.base.world_size,
@@ -358,7 +353,7 @@ class Trainer():
         model = self.build_model()
         optimizer = self.build_optimizer(model)
         saver = self.build_saver(model, optimizer, self.scaler)
-        checkpoint_path = '/home/ddl/git/human_pose_estimation/human_pose/outputs/2022-02-21/14-38-04/checkpoint/top/001st_checkpoint_epoch_98.pth.tar'
+        checkpoint_path = '/media/ddl/새 볼륨/Git/human_pose_estimation/human_pose/outputs/2022-02-21/22-28-08/checkpoint/top/001st_checkpoint_epoch_77.pth.tar'
         saver.load_for_inference(model, self.rank, checkpoint_path)
         train_dl, train_sampler,valid_dl, valid_sampler, test_dl, test_sampler= self.build_dataloader()
         # inference

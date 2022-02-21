@@ -6,6 +6,7 @@ import torchvision
 import torch.utils.data
 import hydra
 import glob
+import re
 import numpy as np
 import os
 import pandas as pd
@@ -32,7 +33,7 @@ class ch_dataset(torch.utils.data.Dataset):
         labels = []
         normalize_length = 3
         for index, action in enumerate(os.listdir(self.data_path)):
-            index = int(action[0])
+            index = int(re.sub(r'[^0-9]', '', action))
             for pose in os.listdir(os.path.join(self.data_path, action)):
                 """Normalize standardrizaton
                 transition_x : image_width
