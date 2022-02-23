@@ -53,6 +53,7 @@ body_pose_estimation = True
 head_pose_estimation = True # 12 프레임 저하
 gaze_estimation = True # 22프레임 저하
 inference_mode = True
+inference_mode_in_the_wild = False
 
 landmark_names = [
     'nose',
@@ -398,6 +399,38 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                     # Flip the image horizontally for a selfie-view display.
                     #cv2.imshow('MediaPipe Pose2', stacked_frame)
 
+                if inference_mode_in_the_wild:
+                    if len(head_poses) > 60:
+                        center_eyes = center_eyes[1:]
+                        center_mouths = center_mouths[1:]
+                        left_shoulders = left_shoulders[1:]
+                        right_shoulders = right_shoulders[1:]
+                        center_stomachs = center_stomachs[1:]
+                        head_poses = head_poses[1:]
+                        body_poses = body_poses[1:]
+                        gaze_poses = gaze_poses[1:]
+                    if len(head_poses) == 60:
+                        output = [center_eyes, center_mouths, left_shoulders, right_shoulders, center_stomachs]
+                        if head_pose_estimation:
+                            head_poses_np = np.array(head_poses)
+                            output.append(head_poses_np)
+                        if body_pose_estimation:
+                            body_poses_np = np.array(body_poses)
+                            output.append(body_poses_np)
+                        if gaze_estimation:
+                            gaze_poses_np = np.array(gaze_poses)
+                            output.append(gaze_poses_np)
+
+                        # 총 25개의 features
+                        output = np.array(output)
+                        while output.shape[1] < 60:
+                            output = np.append(output, output[:, -1, :].reshape(output.shape[0], 1, output.shape[2]), axis=1)
+                        data = preprocessing.data_preprocessing(output)
+                        inputs = np.expand_dims(np.array(data),axis=0)
+                        human_state = inference(inputs)
+                        cv2.putText(frame, human_state, (100, 100), 1, 2, (0, 0, 0), 3)
+
+
                 cv2.imshow('MediaPipe Pose1', frame)
                     # Check the FPS
                 #print('fps = ', 1/(time.time() - start_time))
@@ -498,6 +531,25 @@ if __name__ == "__main__":
     elif inference_mode:
         if not use_video:
             main()
+        elif inference_mode_in_the_wild:
+            base_path = os.getcwd()
+            long_video_path = os.path.join(base_path, 'dataset', 'test_in_the_wild')
+            rgb_videos = []
+            depth_videos = []
+            for file in os.listdir(long_video_path):
+                if 'depth' in file:
+                    depth_videos.append(file)
+                else:
+                    rgb_videos.append(file)
+            rgb_videos.sort()
+            depth_videos.sort()
+            for i in range(len(rgb_videos)):
+                main(
+                rgb_video_path=os.path.join(long_video_path, rgb_videos[i]),
+                depth_video_path=os.path.join(long_video_path, depth_videos[i]),
+                save_path = 'dataset/test_npy/' + '.'
+                    )
+
         else:
             base_path = os.getcwd()
             actions = [ 'nolooking', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left_up', 'up',

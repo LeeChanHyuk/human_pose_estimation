@@ -1,31 +1,30 @@
 classes: 18
 d_hid:
-- 16
-- 32
 - 64
 - 128
+- 192
+- 256
 dropout:
-- 0.1
-- 0.1
-- 0.1
-- 0.1
+- 0.3
+- 0.3
+- 0.3
+- 0.4
 mlp_size:
 - 256
 - 256
 - 256
-- 256
+- 512
 mode: 0
 nhead:
 - 1
-- 1
-- 1
-- 1
+- 2
+- 3
+- 4
 nlayers:
 - 4
-- 4
-- 4
-- 4
+- 5
+- 6
+- 6
 ntoken: 25
 sequence_length: 20
 type: action_transformer/head_motion
-pose_node_num: 3

@@ -44,6 +44,10 @@ class Trainer():
         self.is_master = True if rank == 0 else False
         self.writer = SummaryWriter()
         self.set_env()
+        self.evaluation_results_per_class = []
+        self.actions = [ 'nolooking', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left_up', 'up',
+        'right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out','standard']
+        self.wandb_run = 0
         
     def set_env(self):
         torch.backends.cudnn.benchmark = True
@@ -59,8 +63,18 @@ class Trainer():
                     "learning rate": self.conf.optimizer.params.lr}
                     if self.conf.optimizer.params.weight_decay > 0:
                         config['weight_decay'] = self.conf.optimizer.params.weight_decay
-                    wandb.init(project="action_recognition_with_transformer", config=config)
-                    wandb.run.name = self.conf.architecture.type
+                    config['mode'] = self.conf.architecture['mode']
+                    config['classes'] = self.conf.architecture['classes']
+                    config['d_hid'] = self.conf.architecture['d_hid'][config['mode']]
+                    config['dropout'] = self.conf.architecture['dropout'][config['mode']]
+                    config['mlp_size'] = self.conf.architecture['mlp_size'][config['mode']]
+                    config['nhead'] = self.conf.architecture['nhead'][config['mode']]
+                    config['nlayers'] = self.conf.architecture['nlayers'][config['mode']]
+                    config['ntoken'] = self.conf.architecture['ntoken']
+                    config['architecture_type'] = self.conf.architecture['type']
+                    config['sequence_length'] = self.conf.architecture['sequence_length']
+                    self.wandb_run = wandb.init(project="action_recognition_with_transformer_model_architecture_search", config=config)
+                    wandb.run.name = self.conf.architecture.type + '_' + 'two_attention + combine encoder'
                     wandb.run.save()
 
         # mixed precision
@@ -124,7 +138,7 @@ class Trainer():
         return criterion
 
     def build_saver(self, model, optimizer, scaler):
-        saver = trainer.saver.create(self.conf.saver, model, optimizer, scaler)
+        saver = trainer.saver.create(self.conf.saver, model, optimizer, scaler, architecture_conf=self.conf.architecture)
 
         return saver
     
@@ -209,7 +223,7 @@ class Trainer():
             accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
             recall = (TP) / (TP + FN + 0.000001)
             precision = (TP) / (TP + FP + 0.000001)
-            metric = {'Acc': accuracy, 'Loss': t_loss / t_imgnum,'optimizer':optimizer}
+            metric = {'Acc': accuracy, 'Loss': t_loss / t_imgnum, 'optimizer':optimizer}
             self.writer.add_scalar("Loss/train", t_loss / t_imgnum, epoch)
             self.writer.add_scalar("ACC/train", accuracy, epoch)
             self.writer.add_scalar('Recall/train', recall, epoch)
@@ -218,7 +232,7 @@ class Trainer():
             if self.conf.base.wandb is True:
                 wandb.log({
         "train precision": precision,
-        "train recall": recall})
+        "train recall": recall}, step=epoch)
         # return loss, accuracy
         #return t_loss / t_imgnum, t_acc / t_imgnum, t_iou / t_imgnum, dl
         return t_loss/ t_imgnum, accuracy, accuracy_from_scikit_learn/t_imgnum, dl
@@ -262,6 +276,7 @@ class Trainer():
             t_loss += (loss.item() * y_pred.shape[0])
 
             accuracy, recall, precision, TN, FN, TP, FP = self.evaluation(y_pred, label, TN, FN, TP, FP)
+            self.evaluation_per_class(y_pred = y_pred, label = label)
 
             if step % 100 == 0:
                 pbar.set_postfix({'Valid_Acc':accuracy, 'recall':recall, 'precision':precision, 'valid_Loss':round(loss.item(),2) / t_imgnum})
@@ -276,10 +291,21 @@ class Trainer():
             self.writer.add_scalar('Recall/val', recall, epoch)
             self.writer.add_scalar('Precision/val', precision, epoch)
             self.writer.flush()
+            self.evaluation_result_calculate(epoch = epoch)
             if self.conf.base.wandb is True:
                 wandb.log({
         "valid precision": precision,
-        "valid recall": recall})
+        "valid recall": recall}, step=epoch)
+                for i in range(len(self.evaluation_results_per_class)):
+                    wandb.log({
+                        self.actions[i] + '_valid accuracy_' : self.evaluation_results_per_class[i]['accuracy']}, step=epoch)
+                for i in range(len(self.evaluation_results_per_class)):
+                    wandb.log({
+                        self.actions[i] + '_valid precision_' :self.evaluation_results_per_class[i]['precision']}, step=epoch)
+                for i in range(len(self.evaluation_results_per_class)):
+                    wandb.log({
+                        self.actions[i] + '_valid recall_': self.evaluation_results_per_class[i]['recall']}, step=epoch)
+
         # return loss, accuracy
         #return t_loss / t_imgnum, t_acc / t_imgnum, t_iou / t_imgnum, dl
         return t_loss/ t_imgnum, accuracy, dl
@@ -333,6 +359,8 @@ class Trainer():
             "train_loss": train_loss,
             "valid accuracy":  valid_acc,
             "valid_loss": valid_loss})
+        
+        print('training process is done')
 
     def test_sample_visualization(self, y_pred, label, num, thresh=0.5):
         y_pred = y_pred.detach().cpu().numpy()
@@ -353,7 +381,7 @@ class Trainer():
         model = self.build_model()
         optimizer = self.build_optimizer(model)
         saver = self.build_saver(model, optimizer, self.scaler)
-        checkpoint_path = '/media/ddl/새 볼륨/Git/human_pose_estimation/human_pose/outputs/2022-02-21/22-28-08/checkpoint/top/001st_checkpoint_epoch_77.pth.tar'
+        checkpoint_path = '/home/ddl/git/human_pose_estimation/human_pose/outputs/2022-02-23/22-03-56/checkpoint/top/010st_checkpoint_epoch_235.pth.tar'
         saver.load_for_inference(model, self.rank, checkpoint_path)
         train_dl, train_sampler,valid_dl, valid_sampler, test_dl, test_sampler= self.build_dataloader()
         # inference
@@ -398,7 +426,7 @@ class Trainer():
         model = self.build_model()
         optimizer = self.build_optimizer(model)
         saver = self.build_saver(model, optimizer, self.scaler)
-        checkpoint_path = '/home/ddl/git/human_pose_estimation/human_pose/outputs/2022-02-21/14-38-04/checkpoint/top/001st_checkpoint_epoch_98.pth.tar'
+        checkpoint_path = '/home/ddl/git/human_pose_estimation/human_pose/outputs/2022-02-23/22-03-56/checkpoint/top/001st_checkpoint_epoch_276.pth.tar'
         saver.load_for_inference(model, self.rank, checkpoint_path)
         train_dl, train_sampler,valid_dl, valid_sampler, test_dl, test_sampler= self.build_dataloader()
         # inference
@@ -459,6 +487,44 @@ class Trainer():
         return accuracy, recall, precision, TN, FN, TP, FP
 
 
+    def evaluation_per_class(self, y_pred: np.array, label: np.array) -> None:
+        while len(self.evaluation_results_per_class) != y_pred.shape[-1]:
+            self.evaluation_results_per_class.append({'TN':0, 'FN':0, 'TP':0, 'FP':0})
+        y_pred = np.argmax(y_pred, axis=1)
+        y_pred = np.around(y_pred)
+        for i in range(len(y_pred)):
+            if y_pred[i] == label[i]:
+                self.evaluation_results_per_class[y_pred[i]]['TP'] += 1
+                self.evaluation_results_per_class[y_pred[i]]['TN'] -= 1
+                for j in range(len(self.evaluation_results_per_class)):
+                    self.evaluation_results_per_class[j]['TN'] += 1
+            elif y_pred[i] != label[i]:
+                self.evaluation_results_per_class[y_pred[i]]['FP'] += 1
+                self.evaluation_results_per_class[y_pred[i]]['TN'] -= 1
+                self.evaluation_results_per_class[label[i]]['FN'] += 1
+                self.evaluation_results_per_class[label[i]]['TN'] -= 1
+                for j in range(len(self.evaluation_results_per_class)):
+                    self.evaluation_results_per_class[j]['TN'] += 1
+
+    def evaluation_result_calculate(self, epoch) -> None:
+        for i in range(len(self.evaluation_results_per_class)):
+            TP = self.evaluation_results_per_class[i]['TP']
+            TN = self.evaluation_results_per_class[i]['TN']
+            FP = self.evaluation_results_per_class[i]['FP']
+            FN = self.evaluation_results_per_class[i]['FN']
+            accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
+            recall = (TP) / (TP + FN + 0.000001)
+            precision = (TP) / (TP + FP + 0.000001)
+            self.evaluation_results_per_class[i]['accuracy'] = accuracy
+            self.evaluation_results_per_class[i]['recall'] = recall
+            self.evaluation_results_per_class[i]['precision'] = precision
+            """print('------------epoch = '+ str(epoch)+ '---------------')
+            print('[class =   '+self.actions[i]+'   ]')
+            print('[Accuracy = ' + str(accuracy))
+            print('[Precision = ' + str(precision))
+            print('[Recall = ' + str(recall))
+            print('-----------------------------------')"""
+
 
     def run(self):
         if self.conf.base.mode == 'train':
@@ -470,6 +536,8 @@ class Trainer():
         elif self.conf.base.mode == 'test':
             test_acc, test_recall, test_precision = self.test()
             print('test_acc:',test_acc, 'test_precision', test_precision, 'test_recall', test_recall)
+        if self.conf.base.wandb:
+            self.wandb_run.finish()
 
 
 
@@ -500,7 +568,7 @@ def runner(rank, conf):
     )
     trainer = Trainer(conf, rank)
     trainer.run()
-
+    
 
 
 @hydra.main(config_path='conf', config_name='mine')

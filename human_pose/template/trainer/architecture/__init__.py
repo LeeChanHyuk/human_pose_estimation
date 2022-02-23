@@ -64,6 +64,7 @@ def create(conf, num_classes=None):
                 nlayers=conf['nlayers'][order],
                 sequence_length=conf['sequence_length']
             ) # cls token 관련이 빠져있음. vector 중 0번째만 남기거나 이런게.
+            print(conf['nhead'])
         elif architecture_name== 'gcn':
             order = conf['mode']
             architecture = action_transformer.ActionTransformer3(
@@ -74,6 +75,18 @@ def create(conf, num_classes=None):
                 classes=conf['classes'],
                 nlayers=conf['nlayers'][order],
                 sequence_length=conf['sequence_length']
+            )
+        elif architecture_name == 'test':
+            order = conf['mode']
+            architecture = action_transformer.ActionTransformer4(
+                ntoken=conf['ntoken'],
+                nhead=conf['nhead'][order],
+                dropout=conf['dropout'][order],
+                mlp_size=conf['mlp_size'][order],
+                classes=conf['classes'],
+                nlayers=conf['nlayers'][order],
+                sequence_length=conf['sequence_length'],
+                pose_node_num=conf['pose_node_num']
             )
     elif base == 'unet':
         architecture = smp.Unet(
