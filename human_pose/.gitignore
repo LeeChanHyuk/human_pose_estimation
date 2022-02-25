@@ -1,1 +1,5 @@
 *.avi
+__pycache__/
+*.py[cod]
+
+
