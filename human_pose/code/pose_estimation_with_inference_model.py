@@ -82,7 +82,7 @@ def fill_the_blank(poses):
     return poses
 
 def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 'save.avi', save_path = 'data'):
-    
+# test
     base_path = os.getcwd()
     write_count = 0
     if annotation:
