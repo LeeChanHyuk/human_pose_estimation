@@ -13,14 +13,14 @@ defaults:
 base:
   world_size: 1
   use_amp: False
-  mode: test
+  mode: train_eval
   env:
     mode: gpu
-  seed: '0xC0FFEE'
+  seed: '1004'
   save_dir: ./test
   resume: False
   debug: True
-  wandb: False
+  wandb: True
 
 MASTER_ADDR: '127.0.0.3'
 MASTER_PORT: '9095'

@@ -84,6 +84,13 @@ class ch_dataset(torch.utils.data.Dataset):
                 normalized_poses = self.data_normalization(normalized_poses)
                 data.append(normalized_poses)
                 labels.append(index)
+                if self.conf['reverse_augmentation']:
+                    if index >=0 and index <= 6:
+                        data.append(normalized_poses[::-1])
+                        labels.append(index)
+                    elif index != 15 and index != 16:
+                        data.append(normalized_poses[::-1])
+                        labels.append(index)
 
         return np.array(data), np.array(labels)
 

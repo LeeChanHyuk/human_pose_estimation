@@ -73,8 +73,8 @@ class Trainer():
                     config['ntoken'] = self.conf.architecture['ntoken']
                     config['architecture_type'] = self.conf.architecture['type']
                     config['sequence_length'] = self.conf.architecture['sequence_length']
-                    self.wandb_run = wandb.init(project="action_recognition_with_transformer_model_architecture_search", config=config)
-                    wandb.run.name = self.conf.architecture.type + '_' + 'two_attention + combine encoder'
+                    self.wandb_run = wandb.init(project="action_recognition_augmentation-test", config=config)
+                    wandb.run.name = self.conf.architecture.type + '_' + 'without zoom and zoomout + more standard and nolooking dataset + center'
                     wandb.run.save()
 
         # mixed precision
@@ -381,7 +381,7 @@ class Trainer():
         model = self.build_model()
         optimizer = self.build_optimizer(model)
         saver = self.build_saver(model, optimizer, self.scaler)
-        checkpoint_path = '/home/ddl/git/human_pose_estimation/human_pose/outputs/2022-02-23/22-03-56/checkpoint/top/010st_checkpoint_epoch_235.pth.tar'
+        checkpoint_path = '/home/ddl/git/human_pose_estimation/human_pose/outputs/2022-02-24/augmentation without zoom and zoomout/action_transformer_head_motion/top/001st_checkpoint_epoch_330.pth.tar'
         saver.load_for_inference(model, self.rank, checkpoint_path)
         train_dl, train_sampler,valid_dl, valid_sampler, test_dl, test_sampler= self.build_dataloader()
         # inference
@@ -413,11 +413,13 @@ class Trainer():
             label = label.detach().cpu().numpy()
             t_imgnum += y_pred.shape[0]
             accuracy, recall, precision, TN, FN, TP, FP = self.evaluation(y_pred, label, TN, FN, TP, FP)
+            self.evaluation_per_class(y_pred, label)
         if self.is_master:
             self.writer.add_scalar("ACC/test", accuracy, epoch)
             self.writer.add_scalar('Precision/test', precision, epoch)
             self.writer.add_scalar('Recall/test', recall, epoch)
-            self.writer.flush()
+            self.writer.flush() 
+            self.evaluation_result_calculate(0)
             
         return accuracy, recall, precision
 
@@ -518,12 +520,12 @@ class Trainer():
             self.evaluation_results_per_class[i]['accuracy'] = accuracy
             self.evaluation_results_per_class[i]['recall'] = recall
             self.evaluation_results_per_class[i]['precision'] = precision
-            """print('------------epoch = '+ str(epoch)+ '---------------')
+            print('------------epoch = '+ str(epoch)+ '---------------')
             print('[class =   '+self.actions[i]+'   ]')
             print('[Accuracy = ' + str(accuracy))
-            print('[Precision = ' + str(precision))
-            print('[Recall = ' + str(recall))
-            print('-----------------------------------')"""
+            #print('[Precision = ' + str(precision))
+            #print('[Recall = ' + str(recall))
+            print('-----------------------------------')
 
 
     def run(self):

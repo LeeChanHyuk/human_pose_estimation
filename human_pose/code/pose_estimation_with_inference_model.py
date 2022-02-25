@@ -53,7 +53,7 @@ body_pose_estimation = True
 head_pose_estimation = True # 12 프레임 저하
 gaze_estimation = True # 22프레임 저하
 inference_mode = True
-inference_mode_in_the_wild = False
+inference_mode_in_the_wild = True
 
 landmark_names = [
     'nose',
@@ -82,6 +82,7 @@ def fill_the_blank(poses):
     return poses
 
 def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 'save.avi', save_path = 'data'):
+    
     base_path = os.getcwd()
     write_count = 0
     if annotation:
@@ -458,7 +459,8 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
             data = preprocessing.data_preprocessing(output)
             inputs = np.expand_dims(np.array(data),axis=0)
             human_state = inference(inputs)
-            cv2.putText(frame, human_state, (100, 100), 1, 2, (0, 0, 0), 3)
+            print(human_state)
+            cv2.putText(frame, human_state, (30, 30), 1, 2, (0, 0, 0), 3)
 
     if annotation:
         output = [center_eyes, center_mouths, left_shoulders, right_shoulders, center_stomachs]
@@ -477,7 +479,6 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
         output = np.array(output)
         while output.shape[1] < 60:
             output = np.append(output, output[:, -1, :].reshape(output.shape[0], 1, output.shape[2]), axis=1)
-        print(output.shape)
         if not os.path.exists(os.path.join(base_path, save_path)):
             os.mkdir(os.path.join(base_path, save_path))
         video_name = rgb_video_name.split('/')[-1]
@@ -487,9 +488,9 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
 if __name__ == "__main__":
     if annotation:
         base_path = os.getcwd()
-        actions = [ 'nolooking']
+        actions = [ 'nolooking', 'nolooking', 'standard', 'standard', 'standard']
         for index, action in enumerate(actions):
-            video_folder_path = os.path.join(base_path, 'dataset', 'train_video', str(18 + index) + '.' + action)
+            video_folder_path = os.path.join(base_path, 'dataset', 'additional_train_video', str(index) + '.' + action)
             rgb_videos = []
             depth_videos = []
             for video in os.listdir(video_folder_path):
@@ -505,12 +506,12 @@ if __name__ == "__main__":
                 main(
                     rgb_video_path = os.path.join(video_folder_path, rgb_video_name),
                     depth_video_path = os.path.join(video_folder_path, depth_video_name),
-                    save_path = 'dataset/train_npy/' + str(18 + index) + '.' + action
+                    save_path = 'dataset/additional_train_npy/' + str(index) + '.' + action
                     )
-        actions = [ 'standard', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left_up', 'up',
-        'right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out','looking', 'nolooking']
+        """actions = [ 'nolooking', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left_up', 'up',
+        'right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out', 'standard']
         for index, action in enumerate(actions):
-            video_folder_path = os.path.join(base_path, 'dataset', 'test_video', str(index) + '.' + action)
+            video_folder_path = os.path.join(base_path, 'dataset', 'additional_test_video', str(index) + '.' + action)
             rgb_videos = []
             depth_videos = []
             for video in os.listdir(video_folder_path):
@@ -526,8 +527,8 @@ if __name__ == "__main__":
                 main(
                     rgb_video_path = os.path.join(video_folder_path, rgb_video_name),
                     depth_video_path = os.path.join(video_folder_path, depth_video_name),
-                    save_path = 'dataset/test_npy/' + str(index) + '.' + action
-                    )
+                    save_path = 'dataset/additional_test_npy/' + str(index) + '.' + action
+                    )"""
     elif inference_mode:
         if not use_video:
             main()
