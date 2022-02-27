@@ -35,7 +35,6 @@ import body_pose_estimatior
 from utils import preprocessing
 
 
-only_detection_mode = False
 
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
@@ -43,7 +42,7 @@ mp_pose = mp.solutions.pose
 mp_face_detection = mp.solutions.face_detection
 mp_face_mesh = mp.solutions.face_mesh
 
-
+only_detection_mode = False
 use_realsense = False
 use_video = True
 annotation = False
@@ -54,6 +53,7 @@ head_pose_estimation = True # 12 프레임 저하
 gaze_estimation = True # 22프레임 저하
 inference_mode = True
 inference_mode_in_the_wild = True
+result_record = True
 
 landmark_names = [
     'nose',
@@ -82,7 +82,6 @@ def fill_the_blank(poses):
     return poses
 
 def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 'save.avi', save_path = 'data'):
-# test
     base_path = os.getcwd()
     write_count = 0
     if annotation:
@@ -174,6 +173,22 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                 print('Video length is ' + str(length))
             else:
                 cap = cv2.VideoCapture(0)
+
+            if result_record:
+                w = round(rgb_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                h = round(rgb_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                fps = rgb_cap.get(cv2.CAP_PROP_FPS) # 카메라에 따라 값이 정상적, 비정상적
+
+                # fourcc 값 받아오기, *는 문자를 풀어쓰는 방식, *'DIVX' == 'D', 'I', 'V', 'X'
+                fourcc = cv2.VideoWriter_fourcc(*'DIVX')
+                rgb_video_name = rgb_video_path.split('/')[-1]
+                rgb_video_name = rgb_video_name[0:len(rgb_video_name)-4] + '.avi'
+                original_out = cv2.VideoWriter(
+                    os.path.join(save_path, rgb_video_name)
+                    , fourcc, fps, (w, h))
+                result_out = cv2.VideoWriter(
+                    os.path.join(save_path, rgb_video_name)
+                    , fourcc, fps, (w, h))
 
             print('Camera settings is initialized')
 
@@ -398,7 +413,6 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                         stacked_frame = np.concatenate([frame, zero_array], axis=1)
 
                     # Flip the image horizontally for a selfie-view display.
-                    #cv2.imshow('MediaPipe Pose2', stacked_frame)
 
                 if inference_mode_in_the_wild:
                     if len(head_poses) > 60:
@@ -429,10 +443,15 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                         data = preprocessing.data_preprocessing(output)
                         inputs = np.expand_dims(np.array(data),axis=0)
                         human_state = inference(inputs)
-                        cv2.putText(frame, human_state, (100, 100), 1, 2, (0, 0, 0), 3)
+                        cv2.putText(frame, human_state, (0, 50), 1, 3, (0, 0, 255), 3)
+                        cv2.putText(stacked_frame, 'state: '+ human_state, (0, 50), 1, 3, (0, 0, 255), 3)
 
 
                 cv2.imshow('MediaPipe Pose1', frame)
+                cv2.imshow('MediaPipe Pose2', stacked_frame)
+                if result_record:
+                    result_out.write(frame.copy())
+
                     # Check the FPS
                 #print('fps = ', 1/(time.time() - start_time))
                 pressed_key = cv2.waitKey(1)
@@ -481,16 +500,22 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
             output = np.append(output, output[:, -1, :].reshape(output.shape[0], 1, output.shape[2]), axis=1)
         if not os.path.exists(os.path.join(base_path, save_path)):
             os.mkdir(os.path.join(base_path, save_path))
-        video_name = rgb_video_name.split('/')[-1]
+        video_name = rgb_video_path.split('/')[-1]
         numbers = re.sub(r'[^0-9]', '', video_name)
         np.save(os.path.join(base_path, save_path, numbers), output)
+    
+    if result_record:
+        original_out.release()
+        result_out.release()
+
 
 if __name__ == "__main__":
     if annotation:
         base_path = os.getcwd()
-        actions = [ 'nolooking', 'nolooking', 'standard', 'standard', 'standard']
+        actions = [ 'nolooking', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left_up', 'up',
+        'right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out', 'standard']
         for index, action in enumerate(actions):
-            video_folder_path = os.path.join(base_path, 'dataset', 'additional_train_video', str(index) + '.' + action)
+            video_folder_path = os.path.join(base_path, 'temp_dataset', str(index) + '.' + action)
             rgb_videos = []
             depth_videos = []
             for video in os.listdir(video_folder_path):
@@ -506,7 +531,7 @@ if __name__ == "__main__":
                 main(
                     rgb_video_path = os.path.join(video_folder_path, rgb_video_name),
                     depth_video_path = os.path.join(video_folder_path, depth_video_name),
-                    save_path = 'dataset/additional_train_npy/' + str(index) + '.' + action
+                    save_path = 'temp_npy/' + str(index) + '.' + action
                     )
         """actions = [ 'nolooking', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left_up', 'up',
         'right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out', 'standard']

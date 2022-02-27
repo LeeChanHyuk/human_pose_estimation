@@ -258,6 +258,73 @@ class ActionTransformer4(nn.Module):
     def __init__(self, ntoken: int, nhead: int, sequence_length: int,
                  nlayers: int, dropout: float = 0.5, mlp_size: int = 256, classes: int = 7, pose_node_num = 5):
         super().__init__()
+        
+        # basic
+        self.model_type = 'Transformer'
+        self.d_model = 64 * nhead
+        self.d_hid = self.d_model * 4
+        self.positional_encoder = PositionalEmbedding(self.d_model, sequence_length)
+        self.transformer_encoder = transformer.Encoder(self.d_model, self.d_hid, nhead, nlayers, drop_prob=dropout, device='cuda')
+        self.lambda_function = transforms.Lambda(lambd=lambda x: x[:,0,:])
+
+        # encoder
+        self.pose_encoder = nn.Linear(10, int(self.d_model/2))
+        self.transition_encoder = nn.Linear(15, int(self.d_model/2))
+        self.combine_encoder = nn.Linear(int(self.d_model), self.d_model)
+        self.temp_encoder = nn.Linear(ntoken, self.d_model)
+        self.encoder = nn.Linear(ntoken, self.d_model)
+        self.dense_layer1 = nn.Linear(self.d_model, mlp_size)
+        self.dense_layer2 = nn.Linear(mlp_size, classes)
+        
+        # attention
+        self.pose_attention = transformer.MultiHeadAttention(int(self.d_model / 2), nhead)
+        self.transition_attention = transformer.MultiHeadAttention(int(self.d_model/2), nhead)
+        self.cls_token_attention = transformer.MultiHeadAttention(self.d_model, self.d_model)
+        self.init_weights()
+
+        
+
+    def init_weights(self) -> None:
+        initrange = 0.1
+        self.encoder.weight.data.uniform_(-initrange, initrange)
+        self.temp_encoder.weight.data.uniform_(-initrange, initrange)
+        self.dense_layer1.weight.data.uniform_(-initrange, initrange)
+        self.dense_layer2.weight.data.uniform_(-initrange, initrange)
+        self.pose_encoder.weight.data.uniform_(-initrange, initrange)
+        self.transition_encoder.weight.data.uniform_(-initrange, initrange)
+        self.combine_encoder.weight.data.uniform_(-initrange, initrange)
+        
+    def forward(self, x: Tensor) -> Tensor:
+        """
+        Args:
+            src: Tensor, shape [seq_len, batch_size]
+            src_mask: Tensor, shape [seq_len, seq_len]
+
+        Returns:
+            output Tensor of shape [seq_len, batch_size, ntoken]
+        """
+        # CLS Token만 추가 필요
+ #       src = self.temp_encoder(src) * math.sqrt(self.d_model)
+        poses = self.pose_encoder(x[:,:,15:])
+        transitions = self.transition_encoder(x[:,:,:15])
+        x = torch.cat([transitions, poses], dim=2)
+        x = self.positional_encoder(x)
+        x = self.transformer_encoder(x, None)
+        x = self.lambda_function(x)
+        #encoder_output = encoder_output[:,0,:]
+        x = torch.unsqueeze(x, dim=1)
+        x = self.cls_token_attention(q=x, k=x, v=x, mask = None)
+        x = self.dense_layer1(x)
+        output = self.dense_layer2(x)
+        #print(self.encoder.weight)
+        output = torch.squeeze(output,dim=1)
+        return output
+
+class LookingClassifier(nn.Module):
+
+    def __init__(self, ntoken: int, nhead: int, sequence_length: int,
+                 nlayers: int, dropout: float = 0.5, mlp_size: int = 256, classes: int = 7, pose_node_num = 5):
+        super().__init__()
         self.model_type = 'Transformer'
         self.d_model = 64 * nhead
         self.d_hid = self.d_model * 4
@@ -298,9 +365,7 @@ class ActionTransformer4(nn.Module):
         # CLS Token만 추가 필요
  #       src = self.temp_encoder(src) * math.sqrt(self.d_model)
         poses = self.pose_encoder(x[:,:,15:])
-        poses = self.pose_attention(q=poses, k=poses, v=poses, mask=None)
         transitions = self.transition_encoder(x[:,:,:15])
-        transitions = self.transition_attention(q=transitions, k=transitions, v=transitions, mask=None)
         x = torch.cat([transitions, poses], dim=2)
         x = self.combine_encoder(x)
         x = self.positional_encoder(x)
@@ -311,7 +376,6 @@ class ActionTransformer4(nn.Module):
         output = self.dense_layer2(x)
         #print(self.encoder.weight)
         return output
-
 def generate_square_subsequent_mask(sz: int) -> Tensor:
     """Generates an upper-triangular matrix of -inf, with zeros on diag."""
     return torch.triu(torch.ones(sz, sz) * float('-inf'), diagonal=1)

@@ -88,9 +88,9 @@ class ch_dataset(torch.utils.data.Dataset):
                     if index >=0 and index <= 6:
                         data.append(normalized_poses[::-1])
                         labels.append(index)
-                    elif index != 15 and index != 16:
-                        data.append(normalized_poses[::-1])
-                        labels.append(index)
+                    #elif index != 15 and index != 16:
+                    #    data.append(normalized_poses[::-1])
+                    #    labels.append(index)
 
         return np.array(data), np.array(labels)
 

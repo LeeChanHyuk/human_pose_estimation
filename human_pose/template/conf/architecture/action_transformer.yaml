@@ -27,5 +27,5 @@ nlayers:
 - 4
 ntoken: 25
 sequence_length: 20
-type: action_transformer/head_motion
+type: action_transformer/test
 pose_node_num: 3

@@ -45,7 +45,7 @@ class Trainer():
         self.set_env()
         self.evaluation_results_per_class = []
         self.actions = [ 'nolooking', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left_up', 'up',
-        'right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out','standard']
+        'right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out', 'standard']
         self.wandb_run = 0
         
     def set_env(self):
@@ -72,8 +72,8 @@ class Trainer():
                     config['ntoken'] = self.conf.architecture['ntoken']
                     config['architecture_type'] = self.conf.architecture['type']
                     config['sequence_length'] = self.conf.architecture['sequence_length']
-                    self.wandb_run = wandb.init(project="action_recognition_augmentation-test", config=config)
-                    wandb.run.name = self.conf.architecture.type + '_' + 'without zoom and zoomout + more standard and nolooking dataset + center'
+                    self.wandb_run = wandb.init(project="action_recognition_new_architecture_search", config=config)
+                    wandb.run.name = self.conf.architecture.type + '_' + 'transition+rotation encoder+ cls token attention test2'
                     wandb.run.save()
 
         # mixed precision

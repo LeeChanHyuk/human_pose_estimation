@@ -23,7 +23,7 @@ def build_model(num_classes=-1):
     with open(os.path.join(base_path, "template/conf/architecture/action_transformer.yaml")) as f:
         list_doc = yaml.load(f.read(), Loader=yaml.FullLoader)
         order = list_doc['mode']
-        architecture = action_transformer.ActionTransformer2(
+        architecture = action_transformer.ActionTransformer4(
             list_doc['ntoken'],
             list_doc['nhead'][order],
             list_doc['sequence_length'],
@@ -49,14 +49,16 @@ def load_for_inference(rank, checkpoint_name = None):
     model.eval()
     return model
 
-checkpoint_name = '/home/ddl/git/human_pose_estimation/human_pose/outputs/2022-02-25/without zoom and zoomout + more data in standard and nolooking/action_transformer_head_motion/top/001st_checkpoint_epoch_368.pth.tar'
+checkpoint_name = '/home/ddl/git/human_pose_estimation/human_pose/outputs/architecture variation models/[third try] cls token attention/action_transformer_test/top/001st_checkpoint_epoch_343.pth.tar'
 model = load_for_inference(0, checkpoint_name=checkpoint_name)
 
-results = [0, 0, 0]
+results = [0, 0, 0, 0, 0]
 def inference(pose_sequence):
+    results[-5] = results[-4]
+    results[-4] = results[-3]
     results[-3] = results[-2]
     results[-2] = results[-1]
-    threshold = 0.5
+    threshold = 0.90
     pose_sequence = torch.Tensor(pose_sequence).to(device='cuda')
     start_time = time.time()
     y_pred = model(pose_sequence)
@@ -71,9 +73,8 @@ def inference(pose_sequence):
     results[-1] = y_pred
     actions = [ 'nolooking', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left_up', 'up',
     'right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out','standard']
-    if probability > threshold and (results[-1] == results[-2]) and (results[-2] == results[-3]):
-        if probability > threshold:
-            state = actions[y_pred]
+    if probability > threshold and (results[-1] == results[-2]) and (results[-2] == results[-3]) and (results[-3] == results[-4]) and (results[-4] == results[-5]):
+        state = actions[y_pred]
     else:
         state = 'None'
     print(state)
