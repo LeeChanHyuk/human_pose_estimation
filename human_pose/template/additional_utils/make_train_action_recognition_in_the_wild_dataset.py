@@ -6,8 +6,8 @@ import cv2
 import re
 
 base_path = os.getcwd()
-video_path = 'dataset/action_recognition_in_the_wild'
-save_path = 'temp_dataset'
+video_path = 'dataset/additional_dataset/other_people/hyemin_video'
+save_path = 'dataset/additional_dataset/other_people/hyemin_result'
 rgb_video_paths = []
 depth_video_paths = []
 actions = [ '0.nolooking', '1.yaw-', '2.yaw+', '3.pitch-', '4.pitch+', '5.roll-', '6.roll+', '7.left', '8.left_up', '9.up',

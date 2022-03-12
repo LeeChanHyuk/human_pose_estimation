@@ -11,6 +11,7 @@ import numpy as np
 import copy
 import argparse
 from contextlib import suppress
+from sklearn.preprocessing import OneHotEncoder
 
 import torch
 import torch.nn as nn
@@ -33,7 +34,7 @@ import trainer
 from tqdm import tnrange, tqdm 
 from sklearn.metrics import roc_auc_score
 from sklearn import metrics
-from sklearn.metrics import precision_score, accuracy_score
+from sklearn.metrics import precision_score, accuracy_score, roc_curve
 import itertools
 import wandb
 class Trainer():
@@ -47,6 +48,14 @@ class Trainer():
         self.actions = [ 'nolooking', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left_up', 'up',
         'right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out', 'standard']
         self.wandb_run = 0
+        self.train_auroc_score = 0
+        self.train_auroc_samples = 0
+        self.valid_auroc_score = 0
+        self.valid_auroc_samples = 0
+        self.test_auroc_score = 0
+        self.test_auroc_samples = 0
+        self.y_pred_save = []
+        self.label_save = []
         
     def set_env(self):
         torch.backends.cudnn.benchmark = True
@@ -72,8 +81,8 @@ class Trainer():
                     config['ntoken'] = self.conf.architecture['ntoken']
                     config['architecture_type'] = self.conf.architecture['type']
                     config['sequence_length'] = self.conf.architecture['sequence_length']
-                    self.wandb_run = wandb.init(project="action_recognition_new_architecture_search", config=config)
-                    wandb.run.name = self.conf.architecture.type + '_' + 'transition+rotation encoder+ cls token attention test2'
+                    self.wandb_run = wandb.init(project="action_recognition_dataset_test", config=config)
+                    wandb.run.name = self.conf.architecture.type + '_' + 'with additional dataset without standard'
                     wandb.run.save()
 
         # mixed precision
@@ -208,7 +217,8 @@ class Trainer():
             t_loss += (loss.item() * y_pred.shape[0])
 
             accuracy, recall, precision, TN, FN, TP, FP = self.evaluation(y_pred, label, TN, FN, TP, FP)
-
+            self.y_pred_save.append(y_pred)
+            self.label_save.append(label)
             y_pred = np.argmax(y_pred, axis=1)
             y_pred = np.around(y_pred)
             accuracy_from_scikit_learn += (accuracy_score(label,y_pred) * y_pred.shape[0])
@@ -219,6 +229,14 @@ class Trainer():
         
         #torch.distributed.reduce(counter, 0)
         if self.is_master:
+            y_pred = np.concatenate(self.y_pred_save, axis=0)
+            label = np.concatenate(self.label_save, axis=0)
+            score, samples = self.calculate_auroc(y_pred=y_pred, label=label)
+            auroc = score
+            print('****************************train_auroc***********************')
+            print(auroc)
+            self.y_pred_save.clear()
+            self.label_save.clear()
             accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
             recall = (TP) / (TP + FN + 0.000001)
             precision = (TP) / (TP + FP + 0.000001)
@@ -231,7 +249,8 @@ class Trainer():
             if self.conf.base.wandb is True:
                 wandb.log({
         "train precision": precision,
-        "train recall": recall}, step=epoch)
+        "train recall": recall,
+        "train_auroc": auroc}, step=epoch)
         # return loss, accuracy
         #return t_loss / t_imgnum, t_acc / t_imgnum, t_iou / t_imgnum, dl
         return t_loss/ t_imgnum, accuracy, accuracy_from_scikit_learn/t_imgnum, dl
@@ -276,12 +295,22 @@ class Trainer():
 
             accuracy, recall, precision, TN, FN, TP, FP = self.evaluation(y_pred, label, TN, FN, TP, FP)
             self.evaluation_per_class(y_pred = y_pred, label = label)
+            self.y_pred_save.append(y_pred)
+            self.label_save.append(label)
 
             if step % 100 == 0:
                 pbar.set_postfix({'Valid_Acc':accuracy, 'recall':recall, 'precision':precision, 'valid_Loss':round(loss.item(),2) / t_imgnum})
         
         #torch.distributed.reduce(counter, 0)
         if self.is_master:
+            y_pred = np.concatenate(self.y_pred_save, axis=0)
+            label = np.concatenate(self.label_save, axis=0)
+            score, samples = self.calculate_auroc(y_pred=y_pred, label=label)
+            auroc = score
+            print('****************************valid_auroc***********************')
+            print(auroc)
+            self.y_pred_save.clear()
+            self.label_save.clear()
             accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
             recall = (TP) / (TP + FN + 0.000001)
             precision = (TP) / (TP + FP + 0.000001)
@@ -290,11 +319,12 @@ class Trainer():
             self.writer.add_scalar('Recall/val', recall, epoch)
             self.writer.add_scalar('Precision/val', precision, epoch)
             self.writer.flush()
-            self.evaluation_result_calculate(epoch = epoch)
+            #self.evaluation_result_calculate(epoch = epoch)
             if self.conf.base.wandb is True:
                 wandb.log({
         "valid precision": precision,
-        "valid recall": recall}, step=epoch)
+        "valid recall": recall,
+        "valid auroc": auroc}, step=epoch)
                 for i in range(len(self.evaluation_results_per_class)):
                     wandb.log({
                         self.actions[i] + '_valid accuracy_' : self.evaluation_results_per_class[i]['accuracy']}, step=epoch)
@@ -380,13 +410,13 @@ class Trainer():
         model = self.build_model()
         optimizer = self.build_optimizer(model)
         saver = self.build_saver(model, optimizer, self.scaler)
-        checkpoint_path = '/home/ddl/git/human_pose_estimation/human_pose/outputs/2022-02-24/augmentation without zoom and zoomout/action_transformer_head_motion/top/001st_checkpoint_epoch_330.pth.tar'
+        checkpoint_path = '/home/ddl/git/human_pose_estimation/human_pose/outputs/architecture variation models/[third try] cls token attention/action_transformer_test/top/001st_checkpoint_epoch_343.pth.tar'
         saver.load_for_inference(model, self.rank, checkpoint_path)
         train_dl, train_sampler,valid_dl, valid_sampler, test_dl, test_sampler= self.build_dataloader()
         # inference
         pbar = tqdm(
             enumerate(test_dl),
-            bar_format='{desc:<15}{percentage:3.0f}%|{bar:18}{r_bar}', 
+            bar_format='{desc:<15}{percentage:3.0f}%|{bar:18}{r_bar}',
             total=len(test_dl),
             disable=not self.is_master
             ) # set progress bar
@@ -411,14 +441,27 @@ class Trainer():
             y_pred = y_pred.detach().cpu().numpy()
             label = label.detach().cpu().numpy()
             t_imgnum += y_pred.shape[0]
+            self.y_pred_save.append(y_pred)
+            self.label_save.append(label)
             accuracy, recall, precision, TN, FN, TP, FP = self.evaluation(y_pred, label, TN, FN, TP, FP)
             self.evaluation_per_class(y_pred, label)
         if self.is_master:
+            y_pred = np.concatenate(self.y_pred_save, axis=0)
+            label = np.concatenate(self.label_save, axis=0)
+            score, samples = self.calculate_auroc(y_pred=y_pred, label=label)
+            auroc = score / samples
+            self.y_pred_save.clear()
+            self.label_save.clear()
             self.writer.add_scalar("ACC/test", accuracy, epoch)
             self.writer.add_scalar('Precision/test', precision, epoch)
             self.writer.add_scalar('Recall/test', recall, epoch)
             self.writer.flush() 
             self.evaluation_result_calculate(0)
+            if self.conf.base.wandb is True:
+                wandb.log({
+        "test precision": precision,
+        "test recall": recall,
+        "test auroc": auroc}, step=epoch)
             
         return accuracy, recall, precision
 
@@ -506,6 +549,28 @@ class Trainer():
                 self.evaluation_results_per_class[label[i]]['TN'] -= 1
                 for j in range(len(self.evaluation_results_per_class)):
                     self.evaluation_results_per_class[j]['TN'] += 1
+
+    def calculate_auroc(self, y_pred: np.array, label: np.array) -> None:
+        new_y_pred = []
+        for row in y_pred:
+            transformed_row = self.softmax(row)
+            new_y_pred.append(transformed_row)
+        new_y_pred = np.array(new_y_pred, dtype=np.float64)
+        score = roc_auc_score(label, new_y_pred, multi_class='ovr')
+        return score, new_y_pred.shape[0]
+
+    def softmax(self, x):
+        f_x = np.exp(x) / np.sum(np.exp(x))
+        return f_x
+
+    def one_hot_encoding(self, x, class_num):
+        batch_num = x.shape[0]
+        one_hot_matrix = np.zeros((batch_num, class_num), dtype=np.uint8)
+        for i in range(len(x)):
+            one_hot_matrix[i][x[i]] = 1
+        return one_hot_matrix
+
+
 
     def evaluation_result_calculate(self, epoch) -> None:
         for i in range(len(self.evaluation_results_per_class)):

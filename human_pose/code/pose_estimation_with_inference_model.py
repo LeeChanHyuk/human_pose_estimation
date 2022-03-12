@@ -45,15 +45,15 @@ mp_face_mesh = mp.solutions.face_mesh
 only_detection_mode = False
 use_realsense = False
 use_video = True
-annotation = False
+annotation = True
 visualization = True
 text_visualization = True
 body_pose_estimation = True
 head_pose_estimation = True # 12 프레임 저하
 gaze_estimation = True # 22프레임 저하
-inference_mode = True
-inference_mode_in_the_wild = True
-result_record = True
+inference_mode = False
+inference_mode_in_the_wild = False
+result_record = False
 
 landmark_names = [
     'nose',
@@ -448,7 +448,7 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
 
 
                 cv2.imshow('MediaPipe Pose1', frame)
-                cv2.imshow('MediaPipe Pose2', stacked_frame)
+                #cv2.imshow('MediaPipe Pose2', stacked_frame)
                 if result_record:
                     result_out.write(frame.copy())
 
@@ -512,10 +512,9 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
 if __name__ == "__main__":
     if annotation:
         base_path = os.getcwd()
-        actions = [ 'nolooking', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left_up', 'up',
-        'right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out', 'standard']
+        actions = ['right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out', 'standard']
         for index, action in enumerate(actions):
-            video_folder_path = os.path.join(base_path, 'temp_dataset', str(index) + '.' + action)
+            video_folder_path = os.path.join(base_path, 'dataset/additional_dataset/dataset/third_shot/videos/', str(index+10) + '.' + action)
             rgb_videos = []
             depth_videos = []
             for video in os.listdir(video_folder_path):
@@ -528,10 +527,11 @@ if __name__ == "__main__":
             for i in range(len(rgb_videos)):
                 rgb_video_name = rgb_videos[i]
                 depth_video_name = depth_videos[i]
+                print(video_folder_path + '/' + rgb_video_name)
                 main(
                     rgb_video_path = os.path.join(video_folder_path, rgb_video_name),
                     depth_video_path = os.path.join(video_folder_path, depth_video_name),
-                    save_path = 'temp_npy/' + str(index) + '.' + action
+                    save_path = 'dataset/additional_dataset/dataset/third_shot/npy/' + str(index+10) + '.' + action
                     )
         """actions = [ 'nolooking', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left_up', 'up',
         'right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out', 'standard']
