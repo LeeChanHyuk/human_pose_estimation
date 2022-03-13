@@ -10,6 +10,7 @@ import segmentation_models_pytorch as smp
 from . import lstm
 from . import action_transformer
 from . import graph_neural_network
+from .action_transformer_result_comparison import Video_action_transformer_v1, Video_action_transformer_v2
 def create(conf, num_classes=None):
     base, architecture_name = [l.lower() for l in conf['type'].split('/')]
     print('model = ',base,architecture_name)
@@ -88,6 +89,11 @@ def create(conf, num_classes=None):
                 sequence_length=conf['sequence_length'],
                 pose_node_num=conf['pose_node_num']
             )
+    elif base == 'video_action_transformer':
+        if architecture_name == 'v1':
+            architecture = Video_action_transformer_v1.Semi_Transformer(conf['classes'], conf['sequence_length'])
+        elif architecture_name == 'v2':
+            architecture_name = Video_action_transformer_v2.Semi_Transformer(conf['classes'], conf['sequence_length'])
     elif base == 'unet':
         architecture = smp.Unet(
         encoder_name=conf['backbone'],      # choose encoder, e.g. mobilenet_v2 or efficientnet-b7
