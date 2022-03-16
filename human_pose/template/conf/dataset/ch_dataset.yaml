@@ -1,24 +1,24 @@
 train:
   name : 'dataset'
-  dataset_path : '/media/ddl/새 볼륨/Git/human_pose_estimation/human_pose/dataset/train_npy'
+  dataset_path : '/home/ddl/git/human_pose_estimation/human_pose/dataset/train_npy2'
   drop_last : True
   batch_size : 64
   sampling_interval : 1
   sequence_length : 20
-  reverse_augmentation: True
+  reverse_augmentation: False
 
 valid:
   name : 'dataset'
-  dataset_path : '/media/ddl/새 볼륨/Git/human_pose_estimation/human_pose/dataset/train_npy'
+  dataset_path : '/home/ddl/git/human_pose_estimation/human_pose/dataset/train_npy2'
   drop_last : True
   batch_size : 64
   sampling_interval : 1
   sequence_length : 20
-  reverse_augmentation: True
+  reverse_augmentation: False
 
 test:
   name : 'dataset'
-  dataset_path : '/media/ddl/새 볼륨/Git/human_pose_estimation/human_pose/dataset/test_npy'
+  dataset_path : '/home/ddl/git/human_pose_estimation/human_pose/dataset/test_npy2'
   drop_last : True
   batch_size : 64
   sampling_interval : 1

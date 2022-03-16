@@ -5,7 +5,7 @@ import numpy as np
 import math 
 import torchvision
 from torch.autograd import Variable
-from tools import BNClassifier , BottleSoftmax
+from .tools import BNClassifier , BottleSoftmax
 
 # Standard 2 layerd FFN of transformer
 class FeedForward(nn.Module):

@@ -266,6 +266,10 @@ class ActionTransformer4(nn.Module):
         self.positional_encoder = PositionalEmbedding(self.d_model, sequence_length)
         self.transformer_encoder = transformer.Encoder(self.d_model, self.d_hid, nhead, nlayers, drop_prob=dropout, device='cuda')
         self.lambda_function = transforms.Lambda(lambd=lambda x: x[:,0,:])
+        self.pose_batch_normalization = nn.BatchNorm1d(20)
+        self.transition_batch_normalization = nn.BatchNorm1d(20)
+        self.cls_token_batch_normlaization = nn.BatchNorm1d(1)
+        self.dense_layer_batch_normalization = nn.BatchNorm1d(1)
 
         # encoder
         self.pose_encoder = nn.Linear(10, int(self.d_model/2))
@@ -279,7 +283,7 @@ class ActionTransformer4(nn.Module):
         # attention
         self.pose_attention = transformer.MultiHeadAttention(int(self.d_model / 2), nhead)
         self.transition_attention = transformer.MultiHeadAttention(int(self.d_model/2), nhead)
-        self.cls_token_attention = transformer.MultiHeadAttention(self.d_model, self.d_model)
+        self.cls_token_attention = transformer.MultiHeadAttention(self.d_model, int(self.d_model/2))
         self.init_weights()
 
         
@@ -306,7 +310,9 @@ class ActionTransformer4(nn.Module):
         # CLS Token만 추가 필요
  #       src = self.temp_encoder(src) * math.sqrt(self.d_model)
         poses = self.pose_encoder(x[:,:,15:])
+        poses = self.pose_batch_normalization(poses)
         transitions = self.transition_encoder(x[:,:,:15])
+        transitions = self.transition_batch_normalization(transitions)
         x = torch.cat([transitions, poses], dim=2)
         x = self.positional_encoder(x)
         x = self.transformer_encoder(x, None)

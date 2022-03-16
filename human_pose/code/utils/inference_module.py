@@ -49,11 +49,11 @@ def load_for_inference(rank, checkpoint_name = None):
     model.eval()
     return model
 
-checkpoint_name = '/home/ddl/git/human_pose_estimation/human_pose/outputs/architecture variation models/[third try] cls token attention/action_transformer_test/top/001st_checkpoint_epoch_343.pth.tar'
-model = load_for_inference(0, checkpoint_name=checkpoint_name)
 
 results = [0, 0, 0, 0, 0]
 def inference(pose_sequence):
+    checkpoint_name = '/home/ddl/git/human_pose_estimation/human_pose/outputs/architecture variation models/[third try] cls token attention/action_transformer_test/top/001st_checkpoint_epoch_343.pth.tar'
+    model = load_for_inference(0, checkpoint_name=checkpoint_name)
     results[-5] = results[-4]
     results[-4] = results[-3]
     results[-3] = results[-2]

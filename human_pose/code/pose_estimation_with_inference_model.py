@@ -512,9 +512,10 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
 if __name__ == "__main__":
     if annotation:
         base_path = os.getcwd()
-        actions = ['right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out', 'standard']
+        actions = [ 'nolooking', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left_up', 'up',
+        'right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out', 'standard']
         for index, action in enumerate(actions):
-            video_folder_path = os.path.join(base_path, 'dataset/additional_dataset/dataset/third_shot/videos/', str(index+10) + '.' + action)
+            video_folder_path = os.path.join(base_path, 'dataset/additional_dataset/other_people/hyemin/hyemin_video_train', str(index) + '.' + action)
             rgb_videos = []
             depth_videos = []
             for video in os.listdir(video_folder_path):
@@ -531,7 +532,7 @@ if __name__ == "__main__":
                 main(
                     rgb_video_path = os.path.join(video_folder_path, rgb_video_name),
                     depth_video_path = os.path.join(video_folder_path, depth_video_name),
-                    save_path = 'dataset/additional_dataset/dataset/third_shot/npy/' + str(index+10) + '.' + action
+                    save_path = 'dataset/additional_dataset/other_people/hyemin/hyemin_npy_train/' + str(index) + '.' + action
                     )
         """actions = [ 'nolooking', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left_up', 'up',
         'right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out', 'standard']

@@ -81,8 +81,8 @@ class Trainer():
                     config['ntoken'] = self.conf.architecture['ntoken']
                     config['architecture_type'] = self.conf.architecture['type']
                     config['sequence_length'] = self.conf.architecture['sequence_length']
-                    self.wandb_run = wandb.init(project="action_recognition_dataset_test", config=config)
-                    wandb.run.name = self.conf.architecture.type + '_' + 'with additional dataset without standard'
+                    self.wandb_run = wandb.init(project="new dataset test", config=config)
+                    wandb.run.name = self.conf.architecture.type + '_' + 'with researcher'
                     wandb.run.save()
 
         # mixed precision
@@ -233,8 +233,8 @@ class Trainer():
             label = np.concatenate(self.label_save, axis=0)
             score, samples = self.calculate_auroc(y_pred=y_pred, label=label)
             auroc = score
-            print('****************************train_auroc***********************')
-            print(auroc)
+            #print('****************************train_auroc***********************')
+            #print(auroc)
             self.y_pred_save.clear()
             self.label_save.clear()
             accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
@@ -274,6 +274,7 @@ class Trainer():
         accuracy = 0
         recall = 0
         precision = 0
+        accuracy_from_scikit_learn = 0
         TN = 0
         TP = 0
         FN = 0
@@ -297,6 +298,10 @@ class Trainer():
             self.evaluation_per_class(y_pred = y_pred, label = label)
             self.y_pred_save.append(y_pred)
             self.label_save.append(label)
+            y_pred = np.argmax(y_pred, axis=1)
+            y_pred = np.around(y_pred)
+            accuracy_from_scikit_learn += (accuracy_score(label,y_pred) * y_pred.shape[0])
+            
 
             if step % 100 == 0:
                 pbar.set_postfix({'Valid_Acc':accuracy, 'recall':recall, 'precision':precision, 'valid_Loss':round(loss.item(),2) / t_imgnum})
@@ -306,9 +311,10 @@ class Trainer():
             y_pred = np.concatenate(self.y_pred_save, axis=0)
             label = np.concatenate(self.label_save, axis=0)
             score, samples = self.calculate_auroc(y_pred=y_pred, label=label)
+            accuracy_sci = accuracy_from_scikit_learn / t_imgnum
             auroc = score
-            print('****************************valid_auroc***********************')
-            print(auroc)
+            #print('****************************valid_auroc***********************')
+            #print(auroc)
             self.y_pred_save.clear()
             self.label_save.clear()
             accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
@@ -319,12 +325,13 @@ class Trainer():
             self.writer.add_scalar('Recall/val', recall, epoch)
             self.writer.add_scalar('Precision/val', precision, epoch)
             self.writer.flush()
-            #self.evaluation_result_calculate(epoch = epoch)
+            self.evaluation_result_calculate(epoch = epoch)
             if self.conf.base.wandb is True:
                 wandb.log({
         "valid precision": precision,
         "valid recall": recall,
-        "valid auroc": auroc}, step=epoch)
+        "valid auroc": auroc,
+        'valid accuracy_from_scikit_learn': accuracy_sci}, step=epoch)
                 for i in range(len(self.evaluation_results_per_class)):
                     wandb.log({
                         self.actions[i] + '_valid accuracy_' : self.evaluation_results_per_class[i]['accuracy']}, step=epoch)
@@ -410,7 +417,7 @@ class Trainer():
         model = self.build_model()
         optimizer = self.build_optimizer(model)
         saver = self.build_saver(model, optimizer, self.scaler)
-        checkpoint_path = '/home/ddl/git/human_pose_estimation/human_pose/outputs/architecture variation models/[third try] cls token attention/action_transformer_test/top/001st_checkpoint_epoch_343.pth.tar'
+        checkpoint_path = '/home/ddl/git/human_pose_estimation/human_pose/outputs/2022-03-16/new dataset/action_transformer_test/top/001st_checkpoint_epoch_362.pth.tar'
         saver.load_for_inference(model, self.rank, checkpoint_path)
         train_dl, train_sampler,valid_dl, valid_sampler, test_dl, test_sampler= self.build_dataloader()
         # inference
@@ -448,8 +455,8 @@ class Trainer():
         if self.is_master:
             y_pred = np.concatenate(self.y_pred_save, axis=0)
             label = np.concatenate(self.label_save, axis=0)
-            score, samples = self.calculate_auroc(y_pred=y_pred, label=label)
-            auroc = score / samples
+            #score, samples = self.calculate_auroc(y_pred=y_pred, label=label)
+            #auroc = score / samples
             self.y_pred_save.clear()
             self.label_save.clear()
             self.writer.add_scalar("ACC/test", accuracy, epoch)
@@ -460,8 +467,7 @@ class Trainer():
             if self.conf.base.wandb is True:
                 wandb.log({
         "test precision": precision,
-        "test recall": recall,
-        "test auroc": auroc}, step=epoch)
+        "test recall": recall}, step=epoch)
             
         return accuracy, recall, precision
 

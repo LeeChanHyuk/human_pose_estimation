@@ -7,7 +7,7 @@ Note that the train_video, train_npy, test_video, test_npy folder must be in dat
 and the '***_video' folder must be filled by several videos
 """
 
-base_path = '/home/ddl/git/human_pose_estimation/human_pose/dataset'
+base_path = '/home/ddl/git/human_pose_estimation/human_pose/dataset/additional_dataset/other_people/hyemin'
 train_video_path = os.path.join(base_path, 'train_video')
 test_video_path = os.path.join(base_path, 'test_video')
 train_npy_path = os.path.join(base_path, 'train_npy')
