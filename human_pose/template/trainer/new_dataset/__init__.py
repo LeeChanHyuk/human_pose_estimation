@@ -14,6 +14,7 @@ import mpose
 from sklearn.model_selection import train_test_split
 from torch.utils.data.dataset import random_split
 from torch.utils.data import TensorDataset
+import numpy as np
 
 def create(conf, local_rank, world_size, mode='train'):
 

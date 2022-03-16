@@ -1,4 +1,5 @@
 # init에서는 dataset을 create하는 함수를 만들어야지.
+from fileinput import filename
 import logging
 from matplotlib.pyplot import axis
 import torch
@@ -24,6 +25,7 @@ class ch_dataset(torch.utils.data.Dataset):
         self.mode = mode
         self.data_path = self.conf['dataset_path']
         self.data, self.labels = self.get_data()
+        self.train_file_list = []
 
     def __len__(self):
         return len(self.data)
