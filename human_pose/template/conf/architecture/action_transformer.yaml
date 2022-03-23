@@ -27,5 +27,5 @@ nlayers:
 - 8
 ntoken: 25
 sequence_length: 20
-type: action_transformer/test
+type: action_transformer/gcn
 pose_node_num: 3

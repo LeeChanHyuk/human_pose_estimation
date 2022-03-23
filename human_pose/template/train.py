@@ -81,8 +81,8 @@ class Trainer():
                     config['ntoken'] = self.conf.architecture['ntoken']
                     config['architecture_type'] = self.conf.architecture['type']
                     config['sequence_length'] = self.conf.architecture['sequence_length']
-                    self.wandb_run = wandb.init(project="new dataset test", config=config)
-                    wandb.run.name = self.conf.architecture.type + '_' + 'with researcher'
+                    self.wandb_run = wandb.init(project="Graph_neural_network_test", config=config)
+                    wandb.run.name = self.conf.architecture.type + '_' + 'base_line'
                     wandb.run.save()
 
         # mixed precision
