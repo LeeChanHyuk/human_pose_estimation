@@ -1,4 +1,4 @@
-from turtle import forward
+from turtle import forward, pos
 from unicodedata import bidirectional
 from cv2 import repeat
 from importlib_metadata import requires
@@ -196,23 +196,38 @@ class ActionTransformer3(nn.Module):
         self.positional_encoder = PositionalEmbedding(self.d_model, sequence_length)
         self.transformer_encoder = transformer.Encoder(self.d_model, self.d_hid, nhead, nlayers, 0.1, 'cuda')
         self.temp_encoder = nn.Linear(ntoken, self.d_model)
-        self.encoder = nn.Linear(ntoken, self.d_model)
+        self.encoder = nn.Linear(self.d_model * 8, self.d_model)
         self.dense_layer1 = nn.Linear(self.d_model, mlp_size)
         self.dense_layer2 = nn.Linear(mlp_size, classes)
         self.lambda_function = transforms.Lambda(lambd=lambda x: x[:,0,:])
         self.adjacency_matrix = torch.from_numpy(np.array(
-            [[0,1,0,0,0],
+            [[1,1,0,0,0],
             [1,1,1,1,0],
-            [1,0,1,0,1],
-            [1,0,0,1,1],
+            [0,1,1,1,1],
+            [0,1,1,1,1],
             [0,0,1,1,1]]
-        ))
-        self.adjacency_matrix = self.adjacency_matrix.cuda()
+        )).cuda()
+        self.adjacency_matrix2 = torch.from_numpy(np.array(
+        [[1,1,0,0,0,0,1,1],
+        [1,1,1,1,0,1,1,0],
+        [0,1,1,1,1,1,0,0],
+        [0,1,1,1,1,1,0,0],
+        [0,0,1,1,1,1,0,0],
+        [0,1,1,1,1,1,0,0],
+        [1,1,0,0,0,0,1,0],
+        [1,0,0,0,0,0,0,1]]
+        )).cuda()
+        self.transition_batch_normalization = nn.BatchNorm1d(20)
+        self.pose_batch_normalization = nn.BatchNorm1d(20)
+
+        # encoder
+        self.pose_encoder = nn.Linear(10, 12)
+        self.transition_encoder = nn.Linear(15, 20)
         """GAT Hyper parameters
         alpha = 0.1, 0.2, 0.3
         nhid = 16, 32, 64
         """
-        self.GAN = GAT(nfeat=3,nhid=64, nclass=5, dropout=0.1, alpha=0.2, nheads=3).to('cuda')
+        self.GAT = GAT(nfeat=4,nhid=32, nclass=self.d_model, dropout=0.1, alpha=0.2, nheads=3).to('cuda')
         self.init_weights()
         
 
@@ -236,8 +251,15 @@ class ActionTransformer3(nn.Module):
  #       src = self.temp_encoder(src) * math.sqrt(self.d_model)
         # (x = 5x3)
         transitions = x[:,:,:15]
-        feature_matrix = torch.cat([transitions[:,:,0:3], transitions[:,:,3:6], transitions[:,:,6:9], transitions[:,:,9:12],transitions[:,:,12:15]], dim=0)
-        graph_output = self.GAN(feature_matrix, self.adjacency_matrix)
+        transitions = self.transition_encoder(transitions)
+        transitions = self.transition_batch_normalization(transitions)
+
+        postures = x[:,:,15:]
+        postures = self.pose_encoder(postures)
+        postures = self.pose_batch_normalization(postures)
+        feature_matrix = torch.cat([transitions[:,:,0:4].unsqueeze(2), transitions[:,:,4:8].unsqueeze(2), transitions[:,:,8:12].unsqueeze(2), transitions[:,:,12:16].unsqueeze(2),transitions[:,:,16:20].unsqueeze(2), postures[:,:,0:4].unsqueeze(2), postures[:,:,4:8].unsqueeze(2), postures[:,:,8:12].unsqueeze(2)], dim=2)
+        x = self.GAT(feature_matrix, self.adjacency_matrix2)
+        x = x.reshape(x.shape[0], x.shape[1], -1)
         x = self.encoder(x)
         x = self.positional_encoder(x)
         x = self.transformer_encoder(x, None)
