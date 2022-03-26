@@ -8,7 +8,7 @@ from torch import Tensor
 import math
 from . import transformer
 from torchvision import transforms
-from .GNN.GAN_models import GAT
+from .GNN.GAN_models import GAT, GAT2
 import numpy as np
 
 class PositionalEncoding(nn.Module):
@@ -214,11 +214,25 @@ class ActionTransformer3(nn.Module):
         [0,1,1,1,1,1,0,0],
         [0,0,1,1,1,1,0,0],
         [0,1,1,1,1,1,0,0],
-        [1,1,0,0,0,0,1,0],
-        [1,0,0,0,0,0,0,1]]
+        [1,1,0,0,0,0,1,1],
+        [1,0,0,0,0,0,1,1]]
         )).cuda()
+        self.adjacency_matrix3 = np.array(
+        [[1,1,0,0,0,0,1,1],
+        [1,1,1,1,0,1,1,0],
+        [0,1,1,1,1,1,0,0],
+        [0,1,1,1,1,1,0,0],
+        [0,0,1,1,1,1,0,0],
+        [0,1,1,1,1,1,0,0],
+        [1,1,0,0,0,0,1,1],
+        [1,0,0,0,0,0,1,1]]
+        )
         self.transition_batch_normalization = nn.BatchNorm1d(20)
         self.pose_batch_normalization = nn.BatchNorm1d(20)
+        self.silu = nn.SiLU()
+        self.body_pose_embedding = nn.Embedding(num_embeddings=37*37*37, embedding_dim = 10)
+        self.head_pose_embedding = nn.Embedding(num_embeddings=37*37*37, embedding_dim = 10)
+        self.eye_pose_embedding = nn.Embedding(num_embeddings=21*21*21*21, embedding_dim = 10)
 
         # encoder
         self.pose_encoder = nn.Linear(10, 12)
@@ -227,7 +241,8 @@ class ActionTransformer3(nn.Module):
         alpha = 0.1, 0.2, 0.3
         nhid = 16, 32, 64
         """
-        self.GAT = GAT(nfeat=4,nhid=32, nclass=self.d_model, dropout=0.1, alpha=0.2, nheads=3).to('cuda')
+        self.GAT = GAT(nfeat=4,nhid=32, nclass=self.d_model, dropout=0.1, alpha=0.9, nheads=3, adjacency_matrix=self.adjacency_matrix2).to('cuda')
+        self.GAT2 = GAT2(nfeat=4,nhid=32, nclass=self.d_model, dropout=0.1, alpha=0.9, nheads=3, adjacency_matrix=self.adjacency_matrix3).to('cuda')
         self.init_weights()
         
 
@@ -253,20 +268,28 @@ class ActionTransformer3(nn.Module):
         transitions = x[:,:,:15]
         transitions = self.transition_encoder(transitions)
         transitions = self.transition_batch_normalization(transitions)
+        transitions = self.silu(transitions)
 
         postures = x[:,:,15:]
         postures = self.pose_encoder(postures)
         postures = self.pose_batch_normalization(postures)
+        postures = self.silu(postures)
+        
         feature_matrix = torch.cat([transitions[:,:,0:4].unsqueeze(2), transitions[:,:,4:8].unsqueeze(2), transitions[:,:,8:12].unsqueeze(2), transitions[:,:,12:16].unsqueeze(2),transitions[:,:,16:20].unsqueeze(2), postures[:,:,0:4].unsqueeze(2), postures[:,:,4:8].unsqueeze(2), postures[:,:,8:12].unsqueeze(2)], dim=2)
-        x = self.GAT(feature_matrix, self.adjacency_matrix2)
+        #x = self.GAT(feature_matrix, self.adjacency_matrix2)
+        x = self.GAT2(feature_matrix)
         x = x.reshape(x.shape[0], x.shape[1], -1)
+        x = self.silu(x)
         x = self.encoder(x)
+        x = self.silu(x)
         x = self.positional_encoder(x)
         x = self.transformer_encoder(x, None)
         x = self.lambda_function(x)
         #encoder_output = encoder_output[:,0,:]
         x = self.dense_layer1(x)
+        x = self.silu(x)
         output = self.dense_layer2(x)
+        output = self.silu(output)
         #print(self.encoder.weight)
         return output
 

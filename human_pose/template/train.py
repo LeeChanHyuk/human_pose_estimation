@@ -66,6 +66,7 @@ class Trainer():
                     "optimizer": self.conf.optimizer.type,
                     "scheduler": self.conf.scheduler.type,
                     "epochs": self.conf.hyperparameter.epochs,
+
                     "batch_size": self.conf.dataset.train.batch_size,
                     "loss": self.conf.loss.type,
                     "learning rate": self.conf.optimizer.params.lr}
@@ -82,7 +83,7 @@ class Trainer():
                     config['architecture_type'] = self.conf.architecture['type']
                     config['sequence_length'] = self.conf.architecture['sequence_length']
                     self.wandb_run = wandb.init(project="Graph_neural_network_test", config=config)
-                    wandb.run.name = self.conf.architecture.type + '_' + 'gat_all_Features + encoder + batch_norm'
+                    wandb.run.name = self.conf.architecture.type + '_' + 'gat_all_Features + encoder + quantization'
                     wandb.run.save()
 
         # mixed precision
@@ -652,3 +653,4 @@ def main(conf: DictConfig) -> None:
 
 if __name__ == '__main__':
     main()
+    

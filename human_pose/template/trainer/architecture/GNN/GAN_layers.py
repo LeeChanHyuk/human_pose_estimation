@@ -1,3 +1,4 @@
+from re import A
 import numpy as np
 import torch
 import torch.nn as nn
@@ -18,7 +19,7 @@ class GraphAttentionLayer(nn.Module):
 
         self.W = nn.Parameter(torch.empty(size=(in_features, out_features)))
         nn.init.xavier_uniform_(self.W.data, gain=1.414)
-        self.a = nn.Parameter(torch.empty(size=(2*out_features, 1)))
+        self.a = nn.Parameter(torch.empty(size=(2*out_features, 8)))
         nn.init.xavier_uniform_(self.a.data, gain=1.414)
 
         self.leakyrelu = nn.LeakyReLU(self.alpha)
@@ -47,6 +48,8 @@ class GraphAttentionLayer(nn.Module):
         # 이런 방식을 통해 구한 애들은 node간의 연결성을 가지고 있다. 그 후 이 연결성과 인풋을 곱함으로써 연결성을 반영해주는 것이다.
         Wh2 = torch.matmul(Wh, self.a[self.out_features:, :]) # 이것도.
         Wh2 = Wh2.permute(0, 1, 3, 2)
+        Wh1 = self.expands(Wh1)
+        Wh2 = self.expands(Wh2)
         # broadcast add
         
         e = Wh1 + Wh2 # 더해서 정방행렬의 형태로 나타낸다.
@@ -55,6 +58,88 @@ class GraphAttentionLayer(nn.Module):
     def __repr__(self):
         return self.__class__.__name__ + ' (' + str(self.in_features) + ' -> ' + str(self.out_features) + ')'
 
+    def expands(self, data: torch.tensor) -> torch.tensor:
+        if data.shape[2] != data.shape[3]:
+            if data.shape[2] > data.shape[3]:
+                repeat_num = data.shape[2] // data.shape[3]
+                data = torch.repeat_interleave(data, repeat_num, dim=3)
+            else:
+                repeat_num = data.shape[3] // data.shape[2]
+                data = torch.repeat_interleave(data, repeat_num, dim=2)
+        return data
+
+
+class GraphAttentionLayer2(nn.Module):
+    """
+    Simple GAT layer, similar to https://arxiv.org/abs/1710.10903
+    """
+    def __init__(self, in_features, out_features, dropout, alpha, adjacency_matrix, sequence_length, concat=True):
+        super(GraphAttentionLayer2, self).__init__()
+        self.dropout = dropout
+        self.in_features = in_features
+        self.out_features = out_features
+        self.alpha = alpha
+        self.concat = concat
+
+        self.W = nn.Parameter(torch.empty(size=(in_features, adjacency_matrix.shape[0])))
+        self.W2 = nn.Parameter(torch.empty(size=(in_features, adjacency_matrix.shape[0])))
+        self.W3 = nn.Parameter(torch.empty(size=(adjacency_matrix.shape[0], self.out_features)))
+        nn.init.xavier_uniform_(self.W.data, gain=1.414)
+        self.a = nn.Parameter(torch.empty(size=(2*self.out_features, 8)))
+        nn.init.xavier_uniform_(self.a.data, gain=1.414)
+        self.adaptive_A = nn.Parameter(torch.from_numpy(adjacency_matrix.astype(np.float32))).cuda() # 채널 별 adjacency matrix
+        self.adaptive_A = self.adaptive_A.unsqueeze(dim=0)
+        self.adaptive_A = torch.repeat_interleave(self.adaptive_A, sequence_length, dim=0)
+        self.tanh = nn.Tanh()
+        self.leakyrelu = nn.LeakyReLU(self.alpha)
+
+    def forward(self, h): # h = (batch, sequence_length, node, node_features)
+        Wh1 = torch.matmul(h, self.W) # wh1 = (batch, sequence_length, node, node_features)
+        Wh2 = torch.matmul(h, self.W2) # wh2 = (batch, sequence_length, node, node_features) 
+        Wh3 = self.tanh(Wh2 - Wh1)
+        Wh4 = torch.matmul(Wh3, self.W3) # wh = (batch, sequence_length, node, out_features)
+        e = self._prepare_attentional_mechanism_input(Wh4)
+
+        adj = Wh3 * self.alpha + self.adaptive_A
+        zero_vec = -9e15*torch.ones_like(e)
+        attention = torch.where(adj > 0, e, zero_vec) # 
+        attention = F.softmax(attention, dim=3)
+        attention = F.dropout(attention, self.dropout, training=self.training)
+        h_prime = torch.matmul(attention, Wh4)
+
+        if self.concat:
+            return F.elu(h_prime)
+        else:
+            return h_prime
+
+    def _prepare_attentional_mechanism_input(self, Wh):
+        # Wh.shape (N, out_feature)
+        # self.a.shape (2 * out_feature, 1)
+        # Wh1&2.shape (N, 1)
+        # e.shape (N, N)
+        Wh1 = torch.matmul(Wh, self.a[:self.out_features, :]) # node matrix와 weight matrix(a) 의 절반 간의 mul # 여기는 왜  wh와 wh간의 곱을 안구하고, 다른 애와의 곱을 구하는 거지?
+        # 이런 방식을 통해 구한 애들은 node간의 연결성을 가지고 있다. 그 후 이 연결성과 인풋을 곱함으로써 연결성을 반영해주는 것이다.
+        Wh2 = torch.matmul(Wh, self.a[self.out_features:, :]) # 이것도.
+        Wh2 = Wh2.permute(0, 1, 3, 2)
+        Wh1 = self.expands(Wh1)
+        Wh2 = self.expands(Wh2)
+        # broadcast add
+        
+        e = Wh1 - Wh2 # 더해서 정방행렬의 형태로 나타낸다.
+        return self.leakyrelu(e)
+
+    def __repr__(self):
+        return self.__class__.__name__ + ' (' + str(self.in_features) + ' -> ' + str(self.out_features) + ')'
+
+    def expands(self, data: torch.tensor) -> torch.tensor:
+        if data.shape[2] != data.shape[3]:
+            if data.shape[2] > data.shape[3]:
+                repeat_num = data.shape[2] // data.shape[3]
+                data = torch.repeat_interleave(data, repeat_num, dim=3)
+            else:
+                repeat_num = data.shape[3] // data.shape[2]
+                data = torch.repeat_interleave(data, repeat_num, dim=2)
+        return data
 
 class SpecialSpmmFunction(torch.autograd.Function):
     """Special function for only sparse region backpropataion layer."""

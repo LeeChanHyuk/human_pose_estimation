@@ -1,6 +1,7 @@
 # init에서는 dataset을 create하는 함수를 만들어야지.
 from fileinput import filename
 import logging
+from tkinter import N
 from matplotlib.pyplot import axis
 import torch
 import torchvision
@@ -105,6 +106,20 @@ class ch_dataset(torch.utils.data.Dataset):
         for i in range(data.shape[-1]):
             data[:, i] -= data[0, i]
         return data
+
+    def preprocessing_for_embedding(self, data: np.array, quantization_number: int, min=None, max=None) -> np.array:
+        data = data // quantization_number
+        data = data * quantization_number
+        if min is not None:
+            temp_matrix = np.ones_like(data) * min
+            data = np.where(data < min, min, data)
+        if max is not None:
+            temp_matrix = np.ones_like(data) * max
+            data = np.where(data > max, max, data)
+        return data
+
+
+
                 
 
     # data augmentation is conducted in here because of probability of augmentation method
