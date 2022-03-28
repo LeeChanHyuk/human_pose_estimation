@@ -1,9 +1,9 @@
 import os
 
-train_file_path = '/home/ddl/git/human_pose_estimation/human_pose/mmaction2/mmaction2/human_pose/test_video'
+train_file_path = '/home/ddl/git/human_pose_estimation/human_pose/mmaction2/mmaction2/human_pose/train_video'
 
-actions = [ 'nolooking', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left_up', 'up',
-'right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out', 'standard']
+actions = [ 'nolooking', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left_up',
+'right_up',  'right_down', 'left_down', 'left', 'up', 'right', 'down', 'zoom_in', 'zoom_out', 'standard']
 indexes = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 for index, file in enumerate(os.listdir(os.path.join(train_file_path))):
     for index, action in enumerate(actions):

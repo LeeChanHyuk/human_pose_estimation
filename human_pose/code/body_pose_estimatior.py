@@ -150,6 +150,10 @@ def body_keypoint_extractor(body_landmarks, landmark_names, depth, width, height
     left_shoulder = body_landmarks[landmark_names.index('left_shoulder')]
     right_shoulder = body_landmarks[landmark_names.index('right_shoulder')]
 
+    left_eye = body_landmarks[landmark_names.index('left_eye')]
+    right_eye = body_landmarks[landmark_names.index('right_eye')]
+    center_eye = (left_eye + right_eye) / 2
+
     # Change z-position from the Depth image because the original z-position is estimated position from face pose 
     # offset is the margin of shoulder position
     left_y_offset = 10
@@ -158,7 +162,7 @@ def body_keypoint_extractor(body_landmarks, landmark_names, depth, width, height
     right_y_offset = 10
     if normal_camera:
         center_hip = (left_hip + right_hip) / 2
-        center_stomach = [int(max(0, min(center_hip[0], width-1))),int(max(0, min((center_hip[1] * 2 + (left_shoulder[1] + right_shoulder[1]))/3, height-1))), 0]
+        center_stomach = [int(max(0, min(center_hip[0], width-1))),int(max(0, min((center_hip[1] * 1 + (left_shoulder[1] + right_shoulder[1]) * 2)/3, height-1))), 0]
         center_mouth = (mouth_left + mouth_right) / 2
     else:
         nose[2] = depth[min(int(nose[1]), height-1), min(width-1, int(nose[0])), 0]
@@ -173,8 +177,8 @@ def body_keypoint_extractor(body_landmarks, landmark_names, depth, width, height
         right_hip[2] = depth[min(int(right_hip[1])+right_y_offset, height-1), min(width-1, max(0, int(right_hip[0])+right_x_offset)), 0]
         
         center_hip = (left_hip + right_hip) / 2
-        center_stomach = [int(max(0, min(center_hip[0], width-1))),int(max(0, min((center_hip[1] * 2 + (left_shoulder[1] + right_shoulder[1]))/3, height-1))), 0]
+        center_stomach = [int(max(0, min(center_hip[0], width-1))),int(max(0, min((center_hip[1] * 1 + (left_shoulder[1] + right_shoulder[1]) * 2)/3, height-1))), 0]
         center_stomach[2] = depth[center_stomach[1], center_stomach[0], 0]
         center_mouth = (mouth_left + mouth_right) / 2
 
-    return left_shoulder, right_shoulder, center_stomach, center_mouth, left_x_offset, left_y_offset, right_x_offset, right_y_offset
+    return left_shoulder, right_shoulder, center_stomach, center_mouth, left_x_offset, left_y_offset, right_x_offset, right_y_offset, center_eye

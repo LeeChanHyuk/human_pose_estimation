@@ -5,18 +5,19 @@ from .GAN_layers import GraphAttentionLayer, SpGraphAttentionLayer, GraphAttenti
 
 
 class GAT(nn.Module):
-    def __init__(self, nfeat, nhid, nclass, dropout, alpha, nheads, adjacency_matrix):
+    def __init__(self, nfeat, nhid, nclass, dropout, alpha, nheads, adjacency_matrix, softmax_dim):
         """Dense version of GAT."""
         super(GAT, self).__init__()
         self.dropout = dropout
 
-        self.attentions = [GraphAttentionLayer(nfeat, nhid, dropout=dropout, alpha=alpha, concat=True) for _ in range(nheads)]
+        self.attentions = [GraphAttentionLayer(nfeat, nhid, dropout=dropout, alpha=alpha, concat=True, softmax_dim=softmax_dim) for _ in range(nheads)]
         for i, attention in enumerate(self.attentions):
             self.add_module('attention_{}'.format(i), attention)
 
-        self.out_att = GraphAttentionLayer(nhid * nheads, nclass, dropout=dropout, alpha=alpha, concat=False)
+        self.out_att = GraphAttentionLayer(nhid * nheads, nclass, dropout=dropout, alpha=alpha, concat=False, softmax_dim = softmax_dim)
+        self.softmax_dim = softmax_dim
 
-    def forward(self, x, adj):
+    def forward(self, x, adj): # batch, sequence_length, 8, 4
         x = F.dropout(x, self.dropout, training=self.training)
         x = torch.cat([att(x, adj) for att in self.attentions], dim=3)
         x = F.dropout(x, self.dropout, training=self.training)

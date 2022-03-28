@@ -5,7 +5,8 @@ train:
   batch_size : 64
   sampling_interval : 1
   sequence_length : 20
-  reverse_augmentation: False
+  reverse_augmentation: True
+  data_type: all
 
 valid:
   name : 'dataset'
@@ -14,7 +15,8 @@ valid:
   batch_size : 64
   sampling_interval : 1
   sequence_length : 20
-  reverse_augmentation: False
+  reverse_augmentation: True
+  data_type: all
 
 test:
   name : 'dataset'
@@ -23,7 +25,8 @@ test:
   batch_size : 64
   sampling_interval : 1
   sequence_length : 20
-  reverse_augmentation: False
+  reverse_augmentation: True
+  data_type: all
 #train:
 #  name : 'dataset'
 #  dataset_path : '/content/drive/MyDrive/template/dataset/cell_dataset/train'

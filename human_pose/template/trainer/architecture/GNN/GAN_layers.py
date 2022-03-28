@@ -9,7 +9,7 @@ class GraphAttentionLayer(nn.Module):
     """
     Simple GAT layer, similar to https://arxiv.org/abs/1710.10903
     """
-    def __init__(self, in_features, out_features, dropout, alpha, concat=True):
+    def __init__(self, in_features, out_features, dropout, alpha, concat=True, softmax_dim= 3):
         super(GraphAttentionLayer, self).__init__()
         self.dropout = dropout
         self.in_features = in_features
@@ -48,8 +48,8 @@ class GraphAttentionLayer(nn.Module):
         # 이런 방식을 통해 구한 애들은 node간의 연결성을 가지고 있다. 그 후 이 연결성과 인풋을 곱함으로써 연결성을 반영해주는 것이다.
         Wh2 = torch.matmul(Wh, self.a[self.out_features:, :]) # 이것도.
         Wh2 = Wh2.permute(0, 1, 3, 2)
-        Wh1 = self.expands(Wh1)
-        Wh2 = self.expands(Wh2)
+        #Wh1 = self.expands(Wh1)
+        #Wh2 = self.expands(Wh2)
         # broadcast add
         
         e = Wh1 + Wh2 # 더해서 정방행렬의 형태로 나타낸다.
@@ -92,6 +92,7 @@ class GraphAttentionLayer2(nn.Module):
         self.adaptive_A = torch.repeat_interleave(self.adaptive_A, sequence_length, dim=0)
         self.tanh = nn.Tanh()
         self.leakyrelu = nn.LeakyReLU(self.alpha)
+        self.silu = nn.SiLU()
 
     def forward(self, h): # h = (batch, sequence_length, node, node_features)
         Wh1 = torch.matmul(h, self.W) # wh1 = (batch, sequence_length, node, node_features)

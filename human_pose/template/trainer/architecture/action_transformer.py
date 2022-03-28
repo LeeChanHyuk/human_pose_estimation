@@ -188,7 +188,7 @@ class ActionTransformer2(nn.Module):
 class ActionTransformer3(nn.Module):
 
     def __init__(self, ntoken: int, nhead: int, sequence_length: int,
-                 nlayers: int, dropout: float = 0.5, mlp_size: int = 256, classes: int = 7):
+                 nlayers: int, dropout: float = 0.5, mlp_size: int = 256, classes: int = 7, alpha=0.3, n_hid = 32, softmax_dim = 3):
         super().__init__()
         self.model_type = 'Transformer'
         self.d_model = 64 * nhead
@@ -241,8 +241,8 @@ class ActionTransformer3(nn.Module):
         alpha = 0.1, 0.2, 0.3
         nhid = 16, 32, 64
         """
-        self.GAT = GAT(nfeat=4,nhid=32, nclass=self.d_model, dropout=0.1, alpha=0.9, nheads=3, adjacency_matrix=self.adjacency_matrix2).to('cuda')
-        self.GAT2 = GAT2(nfeat=4,nhid=32, nclass=self.d_model, dropout=0.1, alpha=0.9, nheads=3, adjacency_matrix=self.adjacency_matrix3).to('cuda')
+        self.GAT = GAT(nfeat=4,nhid=n_hid, nclass=self.d_model, dropout=0.1, alpha=0.9, nheads=3, adjacency_matrix=self.adjacency_matrix2, softmax_dim=softmax_dim).to('cuda')
+        self.GAT2 = GAT2(nfeat=4,nhid=32, nclass=self.d_model, dropout=0.1, alpha=alpha, nheads=3, adjacency_matrix=self.adjacency_matrix3).to('cuda')
         self.init_weights()
         
 
@@ -276,8 +276,8 @@ class ActionTransformer3(nn.Module):
         postures = self.silu(postures)
         
         feature_matrix = torch.cat([transitions[:,:,0:4].unsqueeze(2), transitions[:,:,4:8].unsqueeze(2), transitions[:,:,8:12].unsqueeze(2), transitions[:,:,12:16].unsqueeze(2),transitions[:,:,16:20].unsqueeze(2), postures[:,:,0:4].unsqueeze(2), postures[:,:,4:8].unsqueeze(2), postures[:,:,8:12].unsqueeze(2)], dim=2)
-        #x = self.GAT(feature_matrix, self.adjacency_matrix2)
-        x = self.GAT2(feature_matrix)
+        x = self.GAT(feature_matrix, self.adjacency_matrix2)
+        #x = self.GAT2(feature_matrix)
         x = x.reshape(x.shape[0], x.shape[1], -1)
         x = self.silu(x)
         x = self.encoder(x)

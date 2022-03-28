@@ -1,3 +1,4 @@
+alpha: 0
 classes: 18
 d_hid:
 - 4
@@ -9,6 +10,7 @@ dropout:
 - 0.1
 - 0.1
 - 0.1
+gat_output_dim: 64
 mlp_size:
 - 64
 - 128
@@ -26,6 +28,7 @@ nlayers:
 - 4
 - 8
 ntoken: 25
-sequence_length: 20
-type: action_transformer/gcn
 pose_node_num: 3
+sequence_length: 20
+softmax_dim: 3
+type: action_transformer/gcn

@@ -75,7 +75,10 @@ def create(conf, num_classes=None):
                 mlp_size=conf['mlp_size'][order],
                 classes=conf['classes'],
                 nlayers=conf['nlayers'][order],
-                sequence_length=conf['sequence_length']
+                sequence_length=conf['sequence_length'],
+                alpha = conf['alpha'],
+                n_hid = conf['gat_output_dim'],
+                softmax_dim=conf['softmax_dim']
             )
         elif architecture_name == 'test':
             order = conf['mode']

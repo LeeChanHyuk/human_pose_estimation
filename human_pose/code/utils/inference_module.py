@@ -23,14 +23,17 @@ def build_model(num_classes=-1):
     with open(os.path.join(base_path, "template/conf/architecture/action_transformer.yaml")) as f:
         list_doc = yaml.load(f.read(), Loader=yaml.FullLoader)
         order = list_doc['mode']
-        architecture = action_transformer.ActionTransformer4(
-            list_doc['ntoken'],
-            list_doc['nhead'][order],
-            list_doc['sequence_length'],
-            list_doc['nlayers'][order],
-            list_doc['dropout'][order],
-            list_doc['mlp_size'][order],
-            list_doc['classes']
+        architecture = action_transformer.ActionTransformer3(
+            ntoken=list_doc['ntoken'],
+            nhead=list_doc['nhead'][order],
+            dropout=list_doc['dropout'][order],
+            mlp_size=list_doc['mlp_size'][order],
+            classes=list_doc['classes'],
+            nlayers=list_doc['nlayers'][order],
+            sequence_length=list_doc['sequence_length'],
+            alpha = list_doc['alpha'],
+            n_hid = list_doc['gat_output_dim'],
+            softmax_dim=list_doc['softmax_dim']
         )
         model = architecture.to('cuda', non_blocking=True)
         model = DDP(model, device_ids=[0], output_device=0, find_unused_parameters=True)
@@ -51,9 +54,9 @@ def load_for_inference(rank, checkpoint_name = None):
 
 
 results = [0, 0, 0, 0, 0]
+#model = load_for_inference(0, checkpoint_name=checkpoint_name)
 def inference(pose_sequence):
-    checkpoint_name = '/home/ddl/git/human_pose_estimation/human_pose/outputs/architecture variation models/[third try] cls token attention/action_transformer_test/top/001st_checkpoint_epoch_343.pth.tar'
-    model = load_for_inference(0, checkpoint_name=checkpoint_name)
+    checkpoint_name = '/home/ddl/git/human_pose_estimation/human_pose/outputs/2022-03-28/best_model_valid_accuracy_0.9354/action_transformer_gcn/top/001st_checkpoint_epoch_522.pth.tar'
     results[-5] = results[-4]
     results[-4] = results[-3]
     results[-3] = results[-2]

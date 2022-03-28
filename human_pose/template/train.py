@@ -56,6 +56,7 @@ class Trainer():
         self.test_auroc_samples = 0
         self.y_pred_save = []
         self.label_save = []
+        self.top_accuracy = [0, 0]
         
     def set_env(self):
         torch.backends.cudnn.benchmark = True
@@ -83,7 +84,7 @@ class Trainer():
                     config['architecture_type'] = self.conf.architecture['type']
                     config['sequence_length'] = self.conf.architecture['sequence_length']
                     self.wandb_run = wandb.init(project="Graph_neural_network_test", config=config)
-                    wandb.run.name = self.conf.architecture.type + '_' + 'gat_all_Features + encoder + quantization'
+                    wandb.run.name = self.conf.architecture.type + '_' + 'GAT batch_size_test (8)'
                     wandb.run.save()
 
         # mixed precision
@@ -232,13 +233,15 @@ class Trainer():
         if self.is_master:
             y_pred = np.concatenate(self.y_pred_save, axis=0)
             label = np.concatenate(self.label_save, axis=0)
-            score, samples = self.calculate_auroc(y_pred=y_pred, label=label)
-            auroc = score
+            #score, samples = self.calculate_auroc(y_pred=y_pred, label=label)
+            #auroc = score
             #print('****************************train_auroc***********************')
             #print(auroc)
             self.y_pred_save.clear()
             self.label_save.clear()
             accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
+            if accuracy > self.top_accuracy[0]:
+                self.top_accuracy[0] = accuracy
             recall = (TP) / (TP + FN + 0.000001)
             precision = (TP) / (TP + FP + 0.000001)
             metric = {'Acc': accuracy, 'Loss': t_loss / t_imgnum, 'optimizer':optimizer}
@@ -246,12 +249,14 @@ class Trainer():
             self.writer.add_scalar("ACC/train", accuracy, epoch)
             self.writer.add_scalar('Recall/train', recall, epoch)
             self.writer.add_scalar('Precision/train', precision, epoch)
+            self.writer.add_scalar('TopAcc/train', self.top_accuracy[0], epoch)
             self.writer.flush()
             if self.conf.base.wandb is True:
                 wandb.log({
         "train precision": precision,
         "train recall": recall,
-        "train_auroc": auroc}, step=epoch)
+        "train_auroc": 1,
+        "train_top_accuracy":self.top_accuracy[0]}, step=epoch)
         # return loss, accuracy
         #return t_loss / t_imgnum, t_acc / t_imgnum, t_iou / t_imgnum, dl
         return t_loss/ t_imgnum, accuracy, accuracy_from_scikit_learn/t_imgnum, dl
@@ -311,27 +316,31 @@ class Trainer():
         if self.is_master:
             y_pred = np.concatenate(self.y_pred_save, axis=0)
             label = np.concatenate(self.label_save, axis=0)
-            score, samples = self.calculate_auroc(y_pred=y_pred, label=label)
+            #score, samples = self.calculate_auroc(y_pred=y_pred, label=label)
             accuracy_sci = accuracy_from_scikit_learn / t_imgnum
-            auroc = score
+            #auroc = score
             #print('****************************valid_auroc***********************')
             #print(auroc)
             self.y_pred_save.clear()
             self.label_save.clear()
             accuracy = (TP + TN) / (TP + TN + FP + FN + 0.000001)
+            if accuracy > self.top_accuracy[1]:
+                self.top_accuracy[1] = accuracy
             recall = (TP) / (TP + FN + 0.000001)
             precision = (TP) / (TP + FP + 0.000001)
             self.writer.add_scalar("Loss/val", t_loss / t_imgnum, epoch)
             self.writer.add_scalar("ACC/val", accuracy, epoch)
             self.writer.add_scalar('Recall/val', recall, epoch)
             self.writer.add_scalar('Precision/val', precision, epoch)
+            self.writer.add_scalar('TopAcc/val', self.top_accuracy[1], epoch)
             self.writer.flush()
             self.evaluation_result_calculate(epoch = epoch)
             if self.conf.base.wandb is True:
                 wandb.log({
         "valid precision": precision,
         "valid recall": recall,
-        "valid auroc": auroc,
+        "valid auroc": 1,
+        "valid top_accuracy":self.top_accuracy[1],
         'valid accuracy_from_scikit_learn': accuracy_sci}, step=epoch)
                 for i in range(len(self.evaluation_results_per_class)):
                     wandb.log({
@@ -418,7 +427,7 @@ class Trainer():
         model = self.build_model()
         optimizer = self.build_optimizer(model)
         saver = self.build_saver(model, optimizer, self.scaler)
-        checkpoint_path = '/home/ddl/git/human_pose_estimation/human_pose/outputs/2022-03-16/new dataset/action_transformer_test/top/001st_checkpoint_epoch_362.pth.tar'
+        checkpoint_path = '/home/ddl/git/human_pose_estimation/human_pose/outputs/2022-03-28/best_model_valid_accuracy_0.9354/action_transformer_gcn/top/001st_checkpoint_epoch_522.pth.tar'
         saver.load_for_inference(model, self.rank, checkpoint_path)
         train_dl, train_sampler,valid_dl, valid_sampler, test_dl, test_sampler= self.build_dataloader()
         # inference
