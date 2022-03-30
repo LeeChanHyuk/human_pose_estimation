@@ -52,8 +52,8 @@ text_visualization = True
 body_pose_estimation = True
 head_pose_estimation = True # 12 프레임 저하
 gaze_estimation = True # 22프레임 저하
-inference_mode = False
-inference_mode_in_the_wild = False
+inference_mode = True
+inference_mode_in_the_wild = True
 result_record = True
 
 landmark_names = [
@@ -578,7 +578,7 @@ if __name__ == "__main__":
                 main(
                 rgb_video_path=os.path.join(long_video_path, rgb_videos[i]),
                 depth_video_path=os.path.join(long_video_path, depth_videos[i]),
-                save_path = 'dataset/test_npy/' + '.'
+                save_path = 'dataset/additional_dataset/In_the_wild_test_result/'
                     )
 
         else:

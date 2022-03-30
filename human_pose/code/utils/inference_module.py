@@ -32,11 +32,11 @@ def build_model(num_classes=-1):
             nlayers=list_doc['nlayers'][order],
             sequence_length=list_doc['sequence_length'],
             alpha = list_doc['alpha'],
-            n_hid = list_doc['gat_output_dim'],
+            n_hid = list_doc['gat_output_dim'][order],
             softmax_dim=list_doc['softmax_dim']
         )
         model = architecture.to('cuda', non_blocking=True)
-        model = DDP(model, device_ids=[0], output_device=0, find_unused_parameters=True)
+        #model = DDP(model, device_ids=[0], output_device=0, find_unused_parameters=True)
         return model
     return None
 
@@ -48,19 +48,17 @@ def load_for_inference(rank, checkpoint_name = None):
     checkpoint_path = os.path.join(base_path, checkpoint_name)
     # Load state_dict
     checkpoint = torch.load(checkpoint_path, map_location=map_location)
-    model.module.load_state_dict(checkpoint['model'])
+    model.load_state_dict(checkpoint['model'])
     model.eval()
     return model
 
 
-results = [0, 0, 0, 0, 0]
-#model = load_for_inference(0, checkpoint_name=checkpoint_name)
+results = np.zeros((20), dtype=np.uint8)
+checkpoint_name = '/home/ddl/git/human_pose_estimation/human_pose/outputs/2022-03-28/best_model2_valid_accuracy_0.9354/action_transformer_gcn/top/001st_checkpoint_epoch_522.pth.tar'
+model = load_for_inference(0, checkpoint_name=checkpoint_name)
+
 def inference(pose_sequence):
-    checkpoint_name = '/home/ddl/git/human_pose_estimation/human_pose/outputs/2022-03-28/best_model_valid_accuracy_0.9354/action_transformer_gcn/top/001st_checkpoint_epoch_522.pth.tar'
-    results[-5] = results[-4]
-    results[-4] = results[-3]
-    results[-3] = results[-2]
-    results[-2] = results[-1]
+    action_vote = np.zeros((18), dtype=np.uint8)
     threshold = 0.90
     pose_sequence = torch.Tensor(pose_sequence).to(device='cuda')
     start_time = time.time()
@@ -73,13 +71,25 @@ def inference(pose_sequence):
     y_pred = np.argmax(y_pred, axis=1)
     y_pred = np.around(y_pred)
     y_pred = y_pred[0]
+
+    # 판단 동작을 한 칸씩 뒤로 민다.
+    for i in range(results.size-1):
+        results[i] = results[i+1]
+        action_vote[results[i]] += 1
     results[-1] = y_pred
+    action_vote[results[-1]] += 1
+    max_voted_action_val = np.max(action_vote)
+    max_voted_action_class = np.argmax(action_vote)
+    
+
+    # 최신 탐지 동작을 list에 넣는다.
+
     actions = [ 'nolooking', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left_up', 'up',
     'right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out','standard']
-    if probability > threshold and (results[-1] == results[-2]) and (results[-2] == results[-3]) and (results[-3] == results[-4]) and (results[-4] == results[-5]):
-        state = actions[y_pred]
+    if probability > threshold and (max_voted_action_val > 15 and y_pred == max_voted_action_class) or (max_voted_action_val > 10 and max_voted_action_class == 0):
+        state = actions[max_voted_action_class]
     else:
-        state = 'None'
+        state = 'standard'
     print(state)
     return state
 

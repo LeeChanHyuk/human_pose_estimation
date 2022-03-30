@@ -83,8 +83,8 @@ class Trainer():
                     config['ntoken'] = self.conf.architecture['ntoken']
                     config['architecture_type'] = self.conf.architecture['type']
                     config['sequence_length'] = self.conf.architecture['sequence_length']
-                    self.wandb_run = wandb.init(project="Graph_neural_network_test", config=config)
-                    wandb.run.name = self.conf.architecture.type + '_' + 'GAT batch_size_test (8)'
+                    self.wandb_run = wandb.init(project="Transformer size test", config=config)
+                    wandb.run.name = self.conf.architecture.type + '_' + 'GAT batch_size_test (8) '
                     wandb.run.save()
 
         # mixed precision
