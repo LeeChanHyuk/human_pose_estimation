@@ -13,14 +13,8 @@ import numpy as np
 import time
 
 def build_model(num_classes=-1):
-    os.environ['MASTER_ADDR'] = '127.0.0.3'
-    os.environ['MASTER_PORT'] = '9095'
-    dist.init_process_group(
-        backend='nccl', world_size=1, init_method='env://',
-        rank=0
-    )
     base_path = os.getcwd()
-    with open(os.path.join(base_path, "template/conf/architecture/action_transformer.yaml")) as f:
+    with open(os.path.join(base_path, "C:/Users/user/Desktop/git/human_pose_estimation/human_pose/template/conf/architecture/action_transformer.yaml")) as f:
         list_doc = yaml.load(f.read(), Loader=yaml.FullLoader)
         order = list_doc['mode']
         architecture = action_transformer.ActionTransformer3(
@@ -54,7 +48,7 @@ def load_for_inference(rank, checkpoint_name = None):
 
 
 results = np.zeros((20), dtype=np.uint8)
-checkpoint_name = '/home/ddl/git/human_pose_estimation/human_pose/outputs/2022-03-28/best_model2_valid_accuracy_0.9354/action_transformer_gcn/top/001st_checkpoint_epoch_522.pth.tar'
+checkpoint_name = 'C:/Users/user/Desktop/git/human_pose_estimation/human_pose/output/best_9354.pth.tar'
 model = load_for_inference(0, checkpoint_name=checkpoint_name)
 
 def inference(pose_sequence):
@@ -67,7 +61,6 @@ def inference(pose_sequence):
     #print('model fps = ', str(1/(time.time() - start_time)))
     y_pred = y_pred.detach().cpu().numpy()
     probability = np.max(y_pred)
-    print(probability)
     y_pred = np.argmax(y_pred, axis=1)
     y_pred = np.around(y_pred)
     y_pred = y_pred[0]
@@ -84,13 +77,12 @@ def inference(pose_sequence):
 
     # 최신 탐지 동작을 list에 넣는다.
 
-    actions = [ 'nolooking', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left_up', 'up',
-    'right_up', 'right', 'right_down', 'down', 'left_down', 'zoom_in', 'zoom_out','standard']
+    actions = [ 'nolooking', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left-up', 'up',
+    'right-up', 'right', 'right-down', 'down', 'left-down', 'zoom-in', 'zoom-out','standard']
     if probability > threshold and (max_voted_action_val > 15 and y_pred == max_voted_action_class) or (max_voted_action_val > 10 and max_voted_action_class == 0):
         state = actions[max_voted_action_class]
     else:
         state = 'standard'
-    print(state)
     return state
 
 def data_normalization(data : np.array):

@@ -23,6 +23,7 @@ import numpy as np
 import pyrealsense2 as rs
 import re
 import random
+import zmq
 
 from utils.draw_utils import draw_axis
 import utils.visualization_tool as visualization_tool
@@ -457,7 +458,7 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                     result_out.write(stacked_frame.copy())
 
                     # Check the FPS
-                #print('fps = ', 1/(time.time() - start_time))
+                print('fps = ', 1/(time.time() - start_time))
                 pressed_key = cv2.waitKey(1)
                 if pressed_key == 27:
                     break
@@ -564,7 +565,7 @@ if __name__ == "__main__":
             main()
         elif inference_mode_in_the_wild:
             base_path = os.getcwd()
-            long_video_path = os.path.join(base_path, 'dataset', 'additional_dataset/test_in_the_wild')
+            long_video_path = os.path.join(base_path, 'dataset', 'test_in_the_wild')
             rgb_videos = []
             depth_videos = []
             for file in os.listdir(long_video_path):
@@ -576,9 +577,9 @@ if __name__ == "__main__":
             depth_videos.sort()
             for i in range(len(rgb_videos)):
                 main(
-                rgb_video_path=os.path.join(long_video_path, rgb_videos[i]),
-                depth_video_path=os.path.join(long_video_path, depth_videos[i]),
-                save_path = 'dataset/additional_dataset/In_the_wild_test_result/'
+                rgb_video_path=long_video_path+'/'+rgb_videos[i],
+                depth_video_path=long_video_path+'/'+ depth_videos[i],
+                save_path = 'dataset/In_the_wild_test_result/'
                     )
 
         else:
