@@ -31,7 +31,7 @@ nlayers:
 - 2
 - 4
 - 8
-ntoken: 25
+ntoken: 21
 pose_node_num: 3
 sequence_length: 20
 softmax_dim: 3

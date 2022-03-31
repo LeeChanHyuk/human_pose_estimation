@@ -84,7 +84,7 @@ class Trainer():
                     config['architecture_type'] = self.conf.architecture['type']
                     config['sequence_length'] = self.conf.architecture['sequence_length']
                     self.wandb_run = wandb.init(project="Transformer size test", config=config)
-                    wandb.run.name = self.conf.architecture.type + '_' + 'GAT batch_size_test (8) '
+                    wandb.run.name = self.conf.architecture.type + '_' + 'no body pose + no eyes2'
                     wandb.run.save()
 
         # mixed precision
