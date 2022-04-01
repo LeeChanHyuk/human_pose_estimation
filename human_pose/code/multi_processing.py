@@ -10,6 +10,7 @@ if __name__ == "__main__":
 	p3 = Process(target=main_function)
 	p1.start()
 	print('p1 start')
+	# 여기에 sleep 넣어볼까?
 	p2.start()
 	print('p2 start')
 	p3.start()

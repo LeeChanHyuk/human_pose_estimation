@@ -52,15 +52,10 @@ visualization = False
 text_visualization = False
 body_pose_estimation = True
 head_pose_estimation = True # 12 프레임 저하
-gaze_estimation = True # 22프레임 저하
+gaze_estimation = False # 22프레임 저하
 inference_mode = True
 inference_mode_in_the_wild = True
 result_record = False
-context = zmq.Context()
-socket = context.socket(zmq.DEALER)
-socket.setsockopt_string(zmq.IDENTITY, 'POSETRACKER')
-socket.connect("tcp://localhost:5557")
-socket.send_string("Hello_from_tracker")
 
 landmark_names = [
     'nose',
@@ -92,6 +87,11 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
     base_path = os.getcwd()
     zmq_enable = True
     write_count = 0
+    context = zmq.Context()
+    socket = context.socket(zmq.DEALER)
+    socket.setsockopt_string(zmq.IDENTITY, 'POSETRACKER')
+    socket.connect("tcp://localhost:5557")
+    socket.send_string("Hello_from_tracker")
     if annotation:
         body_poses = []
         head_poses = []
@@ -111,6 +111,13 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
         left_shoulders = []
         right_shoulders = []
         center_stomachs = []
+        for i in range(40):
+            fill_the_blank(head_poses)
+            fill_the_blank(center_eyes)
+            fill_the_blank(center_mouths)
+            fill_the_blank(left_shoulders)
+            fill_the_blank(right_shoulders)
+            fill_the_blank(center_stomachs)
     
     yaw, pitch, roll = 0, 0, 0
     
@@ -425,7 +432,7 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                     # Flip the image horizontally for a selfie-view display.
 
                 if inference_mode_in_the_wild:
-                    if len(head_poses) > 60:
+                    if len(head_poses) > 40:
                         center_eyes = center_eyes[1:]
                         center_mouths = center_mouths[1:]
                         left_shoulders = left_shoulders[1:]
@@ -434,12 +441,12 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                         head_poses = head_poses[1:]
                         body_poses = body_poses[1:]
                         gaze_poses = gaze_poses[1:]
-                    if len(head_poses) == 60:
+                    if len(head_poses) == 40:
                         output = [center_eyes, center_mouths, left_shoulders, right_shoulders, center_stomachs]
                         if head_pose_estimation:
                             head_poses_np = np.array(head_poses)
                             output.append(head_poses_np)
-                        if body_pose_estimation:
+                        if False:
                             body_poses_np = np.array(body_poses)
                             output.append(body_poses_np)
                         if gaze_estimation:
@@ -448,7 +455,7 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
 
                         # 총 25개의 features
                         output = np.array(output)
-                        while output.shape[1] < 60:
+                        while output.shape[1] < 40:
                             output = np.append(output, output[:, -1, :].reshape(output.shape[0], 1, output.shape[2]), axis=1)
                         data = preprocessing.data_preprocessing(output)
                         inputs = np.expand_dims(np.array(data),axis=0)
@@ -458,11 +465,15 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                         if zmq_enable:
                             packet = human_state + ' ' + str(center_eyes[-1][0]) + ' ' + str(center_eyes[-1][1]) + ' ' + str(center_eyes[-1][2]) + ' ' + str(head_poses[-1][0]) + ' ' + str(head_poses[-1][1]) + ' ' + str(head_poses[-1][2])
                             socket.send_string(packet)
-                            request = socket.recv()
-                        if request == 'STOP':
-                            zmq_enable = False
-                        if request == 'START':
-                            zmq_enable = False
+                            #print('tracker send' + str(packet))
+                            #identity = socket.recv()
+                            #print('tracker recv_' + str(identity))
+                            #request = socket.recv()
+                            #print('tracker recv2' + str(request))
+                        #if request == 'STOP':
+                        #    zmq_enable = False
+                        #if request == 'START':
+                        #    zmq_enable = False
 
 
 
@@ -472,7 +483,7 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                     result_out.write(stacked_frame.copy())
 
                     # Check the FPS
-                print('fps = ', 1/(time.time() - start_time))
+                #print('fps = ', 1/(time.time() - start_time))
                 pressed_key = cv2.waitKey(1)
                 if pressed_key == 27:
                     break

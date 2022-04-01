@@ -48,7 +48,7 @@ def load_for_inference(rank, checkpoint_name = None):
 
 
 results = np.zeros((20), dtype=np.uint8)
-checkpoint_name = 'C:/Users/user/Desktop/git/human_pose_estimation/human_pose/output/best_9354.pth.tar'
+checkpoint_name = 'C:/Users/user/Desktop/git/human_pose_estimation/human_pose/output/head_pose_based_best.pth.tar'
 model = load_for_inference(0, checkpoint_name=checkpoint_name)
 
 def inference(pose_sequence):

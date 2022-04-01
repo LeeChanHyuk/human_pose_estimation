@@ -235,14 +235,14 @@ class ActionTransformer3(nn.Module):
         self.eye_pose_embedding = nn.Embedding(num_embeddings=21*21*21*21, embedding_dim = 10)
 
         # encoder
-        self.pose_encoder = nn.Linear(10, 12)
+        self.pose_encoder = nn.Linear(3, 12)
         self.transition_encoder = nn.Linear(15, 20)
         """GAT Hyper parameters
         alpha = 0.1, 0.2, 0.3
         nhid = 16, 32, 64
         """
         self.GAT = GAT(nfeat=4,nhid=n_hid, nclass=self.d_model, dropout=0.1, alpha=0.9, nheads=3, adjacency_matrix=self.adjacency_matrix2, softmax_dim=softmax_dim).to('cuda')
-        self.GAT2 = GAT2(nfeat=4,nhid=32, nclass=self.d_model, dropout=0.1, alpha=alpha, nheads=3, adjacency_matrix=self.adjacency_matrix3).to('cuda')
+        #self.GAT2 = GAT2(nfeat=4,nhid=32, nclass=self.d_model, dropout=0.1, alpha=alpha, nheads=3, adjacency_matrix=self.adjacency_matrix3).to('cuda')
         self.init_weights()
         
 

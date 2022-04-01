@@ -18,21 +18,27 @@ def router_function():
     count=0
     while True:
         # handle input
-        sockets = dict(poll.poll(1000))
+        sockets = dict(poll.poll(2))
 
         if sockets:
-            identity = tracker.recv()
+            identity = tracker.recv() # id
             msg = tracker.recv()
-            counter[identity] += 1
+            print('router recv1' + ' ' + str(msg))
+            counter[identity] += 1 # id에 메세지가 하나 더 왔다.
+            print('router recv2' + ' ' + str(identity))
         # start recording
-        for identity in counter.keys():
+        #for identity in counter.keys():
+            #print('router send1')
             tracker.send(identity, zmq.SNDMORE)
+            #print('router send2')
             tracker.send_string("START")
         
-        message = to_renderer.recv()
-        splited_list = list(str(msg).split(' '))
-        if len(splited_list) > 5:
-            to_renderer.send_string(str(msg))
-        else:
-            to_renderer.send_string('N')
+            message = to_renderer.recv()
+            splited_list = list(str(msg).split(' '))
+            if len(splited_list) > 5:
+                to_renderer.send_string(str(msg))
+            else:
+                to_renderer.send_string('N')
+
+            
 
