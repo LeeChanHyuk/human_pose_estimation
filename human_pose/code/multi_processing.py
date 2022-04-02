@@ -1,6 +1,6 @@
 import os
 from multiprocessing import Process
-from pose_estimation_with_zeromq import main_function
+from pose_estimation_with_semi_final import main_function
 from zmq_dealer_dummy import dummy_zmq_dealer
 from zmq_router import router_function
 from time import sleep

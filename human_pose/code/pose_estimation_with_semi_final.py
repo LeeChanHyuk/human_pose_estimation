@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding:utf-8 -*-
 ##############################################################
-################## 2022.01.09.ChanHyukLee ####################
+################## 2022.04.02.ChanHyukLee ####################
 ##############################################################
 # Facial & Body landmark is from mediaPipe (Google)
 # Gaze estimation module is from david-wb (https://github.com/david-wb/gaze-estimation)
@@ -44,18 +44,21 @@ mp_pose = mp.solutions.pose
 mp_face_detection = mp.solutions.face_detection
 mp_face_mesh = mp.solutions.face_mesh
 
-only_detection_mode = False
+# Don't change
+inference_mode = True
+inference_mode_in_the_wild = True
+
+only_detection_mode = True
 use_realsense = True
 use_video = False
 annotation = False
 visualization = False
 text_visualization = False
-body_pose_estimation = True
-head_pose_estimation = True # 12 프레임 저하
+body_pose_estimation = False
+head_pose_estimation = False # 12 프레임 저하
 gaze_estimation = False # 22프레임 저하
-inference_mode = True
-inference_mode_in_the_wild = True
 result_record = False
+zmq_enable = True
 
 landmark_names = [
     'nose',
@@ -102,7 +105,6 @@ def fps_quantization(fps):
 
 def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 'save.avi', save_path = 'data'):
     base_path = os.getcwd()
-    zmq_enable = True
     write_count = 0
     context = zmq.Context()
     socket = context.socket(zmq.DEALER)
@@ -184,7 +186,7 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
         min_tracking_confidence=0.5,
         model_complexity=1) as pose:
         with mp_face_mesh.FaceMesh(
-            max_num_faces=1,
+            max_num_faces=5,
             min_detection_confidence=0.5) as face_mesh:
             #try
             print('Camera settings is started')
@@ -459,48 +461,57 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                     head_poses = head_poses[len(head_poses) - 200 : len(head_poses)]
                     body_poses = body_poses[len(body_poses) - 200 : len(body_poses)]
                     gaze_poses = gaze_poses[len(gaze_poses) - 200 : len(gaze_poses)] 
-                    if len(head_poses) > rounded_fps*2:
-                        temp_center_eyes = center_eyes[len(center_eyes) - rounded_fps*2:len(center_eyes)]
-                        temp_center_mouths = center_mouths[len(center_mouths) - 2*rounded_fps: len(center_mouths)]
-                        temp_left_shoulders = left_shoulders[len(left_shoulders) - 2*rounded_fps: len(left_shoulders)]
-                        temp_right_shoulders = right_shoulders[len(right_shoulders) - rounded_fps*2 : len(right_shoulders)]
-                        temp_center_stomachs = center_stomachs[len(center_stomachs) - 2*rounded_fps : len(center_stomachs)]
-                        temp_head_poses = head_poses[len(head_poses) - 2*rounded_fps : len(head_poses)]
-                        temp_body_poses = body_poses[len(body_poses) - 2*rounded_fps : len(body_poses)]
-                        temp_gaze_poses = gaze_poses[len(gaze_poses) - 2*rounded_fps : len(gaze_poses)] 
-                    if len(temp_head_poses) == rounded_fps*2 and rounded_fps>5:
-                        output = [temp_center_eyes, temp_center_mouths, temp_left_shoulders, temp_right_shoulders, temp_center_stomachs]
-                        if head_pose_estimation:
-                            head_poses_np = np.array(temp_head_poses)
-                            output.append(head_poses_np)
-                        if False:
-                            body_poses_np = np.array(body_poses)
-                            output.append(body_poses_np)
-                        if gaze_estimation:
-                            gaze_poses_np = np.array(temp_gaze_poses)
-                            output.append(gaze_poses_np)
+                    if head_pose_estimation and body_pose_estimation:
+                        if len(head_poses) > rounded_fps*2:
+                            temp_center_eyes = center_eyes[len(center_eyes) - rounded_fps*2:len(center_eyes)]
+                            temp_center_mouths = center_mouths[len(center_mouths) - 2*rounded_fps: len(center_mouths)]
+                            temp_left_shoulders = left_shoulders[len(left_shoulders) - 2*rounded_fps: len(left_shoulders)]
+                            temp_right_shoulders = right_shoulders[len(right_shoulders) - rounded_fps*2 : len(right_shoulders)]
+                            temp_center_stomachs = center_stomachs[len(center_stomachs) - 2*rounded_fps : len(center_stomachs)]
+                            temp_head_poses = head_poses[len(head_poses) - 2*rounded_fps : len(head_poses)]
+                            temp_body_poses = body_poses[len(body_poses) - 2*rounded_fps : len(body_poses)]
+                            temp_gaze_poses = gaze_poses[len(gaze_poses) - 2*rounded_fps : len(gaze_poses)] 
+                        if len(temp_head_poses) == rounded_fps*2 and rounded_fps>5:
+                            output = [temp_center_eyes, temp_center_mouths, temp_left_shoulders, temp_right_shoulders, temp_center_stomachs]
+                            if head_pose_estimation:
+                                head_poses_np = np.array(temp_head_poses)
+                                output.append(head_poses_np)
+                            if False:
+                                body_poses_np = np.array(body_poses)
+                                output.append(body_poses_np)
+                            if gaze_estimation:
+                                gaze_poses_np = np.array(temp_gaze_poses)
+                                output.append(gaze_poses_np)
 
-                        # 총 25개의 features
-                        output = np.array(output)
-                        while output.shape[1] < rounded_fps*2:
-                            output = np.append(output, output[:, -1, :].reshape(output.shape[0], 1, output.shape[2]), axis=1)
-                        data = preprocessing.data_preprocessing(output, rounded_fps)
-                        inputs = np.expand_dims(np.array(data),axis=0)
-                        human_state = inference(inputs)
-                        cv2.putText(frame, human_state, (0, 50), 1, 3, (0, 0, 255), 3)
-                        #cv2.putText(stacked_frame, 'state: '+ human_state, (0, 50), 1, 3, (0, 0, 255), 3)
-                        if zmq_enable:
-                            packet = human_state + ' ' + str(center_eyes[-1][0]) + ' ' + str(center_eyes[-1][1]) + ' ' + str(center_eyes[-1][2]) + ' ' + str(head_poses[-1][0]) + ' ' + str(head_poses[-1][1]) + ' ' + str(head_poses[-1][2])
-                            socket.send_string(packet)
-                            #print('tracker send' + str(packet))
-                            #identity = socket.recv()
-                            #print('tracker recv_' + str(identity))
-                            #request = socket.recv()
-                            #print('tracker recv2' + str(request))
-                        #if request == 'STOP':
-                        #    zmq_enable = False
-                        #if request == 'START':
-                        #    zmq_enable = False
+                            # 총 25개의 features
+                            output = np.array(output)
+                            while output.shape[1] < rounded_fps*2:
+                                output = np.append(output, output[:, -1, :].reshape(output.shape[0], 1, output.shape[2]), axis=1)
+                            data = preprocessing.data_preprocessing(output, rounded_fps)
+                            inputs = np.expand_dims(np.array(data),axis=0)
+                            human_state = inference(inputs)
+                            cv2.putText(frame, human_state, (0, 50), 1, 3, (0, 0, 255), 3)
+                            #cv2.putText(stacked_frame, 'state: '+ human_state, (0, 50), 1, 3, (0, 0, 255), 3)
+                    if zmq_enable:
+                        if only_detection_mode:
+                            packet = 'D' + ' ' + str(center_eyes[-1][0]) + ' ' + str(center_eyes[-1][1]) + ' ' + str(center_eyes[-1][2])
+                        elif head_pose_estimation == True and body_pose_estimation == False:
+                            packet = 'E' + ' ' + str(center_eyes[-1][0]) + ' ' + str(center_eyes[-1][1]) + ' ' + str(center_eyes[-1][2]) + ' ' + str(head_poses[-1][0]) + ' ' + str(head_poses[-1][1]) + ' ' +str(head_poses[-1][2])
+                        elif head_pose_estimation == True and body_pose_estimation == True:
+                            packet = 'A' + ' ' + human_state + ' ' + str(center_eyes[-1][0]) + ' ' + str(center_eyes[-1][1]) + ' ' + str(center_eyes[-1][2]) + ' ' + str(head_poses[-1][0]) + ' ' + str(head_poses[-1][1]) + ' ' + str(head_poses[-1][2])
+                        else:
+                            packet = 'N'
+                        print('tracker ' + packet)
+                        socket.send_string(packet)
+                        #print('tracker send' + str(packet))
+                        #identity = socket.recv()
+                        #print('tracker recv_' + str(identity))
+                        #request = socket.recv()
+                        #print('tracker recv2' + str(request))
+                    #if request == 'STOP':
+                    #    zmq_enable = False
+                    #if request == 'START':
+                    #    zmq_enable = False
 
 
 
@@ -511,7 +522,7 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
 
                     # Check the FPS
                 fps = 1 / (time.time() - start_time)
-                print(fps)
+                #print(fps)
                 pressed_key = cv2.waitKey(1)
                 if pressed_key == 27:
                     break

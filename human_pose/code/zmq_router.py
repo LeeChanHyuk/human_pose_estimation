@@ -23,9 +23,8 @@ def router_function():
         if sockets:
             identity = tracker.recv() # id
             msg = tracker.recv()
-            print('router recv1' + ' ' + str(msg))
+            send_message = msg_classification(msg)
             counter[identity] += 1 # id에 메세지가 하나 더 왔다.
-            print('router recv2' + ' ' + str(identity))
         # start recording
         #for identity in counter.keys():
             #print('router send1')
@@ -35,10 +34,19 @@ def router_function():
         
             message = to_renderer.recv()
             splited_list = list(str(msg).split(' '))
-            if len(splited_list) > 5:
-                to_renderer.send_string(str(msg))
-            else:
-                to_renderer.send_string('N')
+            to_renderer.send_string(send_message)
 
+def msg_classification(msg):
+    msg = list(str(msg).split(' '))
+    if len(msg) == 1 or len(msg) == 3:
+        send_message = 'N'
+    elif len(msg) == 4: # only detection mode
+        send_message = 'D' + ' ' + msg[1] + ' ' + msg[2] + ' ' + msg[3]
+    elif len(msg) == 7: # estimation mode
+        send_message = 'E' + ' ' + msg[1] + ' ' + msg[2] + ' ' + msg[3] + ' ' + msg[4] + ' ' + msg[5] + ' ' + msg[6]
+    elif len(msg) == 8: # recognition mode
+        send_message = 'A' + ' ' + msg[1]+ ' ' + msg[2] + ' ' + msg[3] + ' ' + msg[4] + ' ' + msg[5] + ' ' + msg[6]
+    print('router ' + send_message)
+    return send_message
             
 
