@@ -105,13 +105,9 @@ def fps_quantization(fps):
 
 def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 'save.avi', save_path = 'data'):
     base_path = os.getcwd()
-    write_count = 0
-    context = zmq.Context()
-    socket = context.socket(zmq.DEALER)
-    socket.setsockopt_string(zmq.IDENTITY, 'POSETRACKER')
-    socket.connect("tcp://localhost:5557")
     fps = 20
-    socket.send_string("Hello_from_tracker")
+
+    
     if annotation:
         body_poses = []
         head_poses = []
@@ -131,6 +127,7 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
         left_shoulders = []
         right_shoulders = []
         center_stomachs = []
+        human_state = None
         for i in range(200):
             fill_the_blank(head_poses)
             fill_the_blank(center_eyes)
@@ -230,6 +227,29 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
             # Load the frame from webcam
             print("Please turn on the super multiview renderer")
             while True:
+                # Communication settings
+                communication_read = open('communication.txt', 'r')
+                line = ['0', '0 0 0', '0 0 0', 'standard'] # tracking_mode / eye_position / head_rotation / human action
+                for i in range(4): # mode / eye_position / head_rotation / action
+                    line[i] = communication_read.readline()
+                if line[0].strip() == '0':
+                    communication_read.close()
+                    continue
+                elif line[0].strip() == '1':
+                    only_detection_mode = True
+                    head_pose_estimation = False
+                    body_pose_estimation = False
+                elif line[0].strip() == '2':
+                    only_detection_mode = False
+                    head_pose_estimation = True
+                    body_pose_estimation = False
+                elif line[0].strip() == '3':
+                    head_pose_estimation = True
+                    body_pose_estimation = True
+                else:
+                    print('Undefined mode is occurred. Please modify the line 1 in the communication.txt file')
+                communication_read.close()
+
                 start_time = time.time()
                 all_estimation_is_successed = True
                 #a = cv2.waitKey(10)
@@ -260,7 +280,7 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                 if depth.shape != frame.shape:
                     frame = cv2.resize(frame, dsize=(depth.shape[1], depth.shape[0]), interpolation=cv2.INTER_AREA)
 
-                depth = depth / 20
+                #depth = depth / 20
 
                 # frame shape for return normalized bounding box info
                 height, width = frame.shape[:2]
@@ -493,25 +513,16 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                             cv2.putText(frame, human_state, (0, 50), 1, 3, (0, 0, 255), 3)
                             #cv2.putText(stacked_frame, 'state: '+ human_state, (0, 50), 1, 3, (0, 0, 255), 3)
                     if zmq_enable:
-                        if only_detection_mode:
-                            packet = 'D' + ' ' + str(center_eyes[-1][0]) + ' ' + str(center_eyes[-1][1]) + ' ' + str(center_eyes[-1][2])
-                        elif head_pose_estimation == True and body_pose_estimation == False:
-                            packet = 'E' + ' ' + str(center_eyes[-1][0]) + ' ' + str(center_eyes[-1][1]) + ' ' + str(center_eyes[-1][2]) + ' ' + str(head_poses[-1][0]) + ' ' + str(head_poses[-1][1]) + ' ' +str(head_poses[-1][2])
-                        elif head_pose_estimation == True and body_pose_estimation == True:
-                            packet = 'A' + ' ' + human_state + ' ' + str(center_eyes[-1][0]) + ' ' + str(center_eyes[-1][1]) + ' ' + str(center_eyes[-1][2]) + ' ' + str(head_poses[-1][0]) + ' ' + str(head_poses[-1][1]) + ' ' + str(head_poses[-1][2])
-                        else:
-                            packet = 'N'
-                        print('tracker ' + packet)
-                        socket.send_string(packet)
-                        #print('tracker send' + str(packet))
-                        #identity = socket.recv()
-                        #print('tracker recv_' + str(identity))
-                        #request = socket.recv()
-                        #print('tracker recv2' + str(request))
-                    #if request == 'STOP':
-                    #    zmq_enable = False
-                    #if request == 'START':
-                    #    zmq_enable = False
+                        communication_write = open('communication.txt', 'r+')
+                        communication_write.write(line[0])
+                        communication_write.write(str(round(center_eyes[-1][0])).zfill(3) + ' ' + str(round(center_eyes[-1][1])).zfill(3) + ' ' + str(round(center_eyes[-1][2])).zfill(3) + '\n')
+                        communication_write.write(str(round(head_poses[-1][0])).zfill(3) + ' ' + str(round(head_poses[-1][1])).zfill(3) + ' ' + str(round(head_poses[-1][2])).zfill(3) + '\n' if head_pose_estimation else '0 0 0\n')
+                        communication_write.write(human_state+'\n' if human_state is not None else 'standard\n')
+                        communication_write.close()
+                        
+
+
+
 
 
 
@@ -526,29 +537,6 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                 pressed_key = cv2.waitKey(1)
                 if pressed_key == 27:
                     break
-
-    """if head_pose_estimation and (inference_mode):
-        if len(head_poses) >=58:
-            output = [center_eyes, center_mouths, left_shoulders, right_shoulders, center_stomachs]
-            if head_pose_estimation:
-                head_poses = np.array(head_poses)
-                output.append(head_poses)
-            if body_pose_estimation:
-                body_poses = np.array(body_poses)
-                output.append(body_poses)
-            if gaze_estimation:
-                gaze_poses = np.array(gaze_poses)
-                output.append(gaze_poses)
-
-            # 총 25개의 features
-            output = np.array(output)
-            while output.shape[1] < 60:
-                output = np.append(output, output[:, -1, :].reshape(output.shape[0], 1, output.shape[2]), axis=1)
-            data = preprocessing.data_preprocessing(output)
-            inputs = np.expand_dims(np.array(data),axis=0)
-            human_state = inference(inputs)
-            cv2.putText(frame, human_state, (30, 30), 1, 2, (0, 0, 0), 3)
-            """
 
     if annotation:
         output = [center_eyes, center_mouths, left_shoulders, right_shoulders, center_stomachs]
