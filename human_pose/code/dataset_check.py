@@ -1,7 +1,10 @@
 import os
 import numpy as np
+import time
 
-file_path = '/home/ddl/git/human_pose_estimation/human_pose/dataset/train_npy/8.left_up/000.npy'
-
-file = np.load(file_path)
-print(file)
+f = open('test.txt', 'r')
+start_time = time.time()
+while True:
+	line = f.readline()
+	if not line: break
+print('fps = '+ str(time.time() - start_time))
