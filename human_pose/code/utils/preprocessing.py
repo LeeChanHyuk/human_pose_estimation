@@ -1,4 +1,5 @@
 from cv2 import split
+from matplotlib.pyplot import axis
 import numpy as np
 from torch import normal
 
@@ -47,7 +48,8 @@ def size_normalization(data: np.array, fps: int) -> np.array: # input shape = (s
     normalize_num = int(data.shape[0] - 20)
     if normalize_num < 0:
         for i in range(abs(normalize_num)):
-            data = np.append(data, np.array[data[-1]], axis=-1)
+            appended_data = np.array(data[-1])
+            data = np.append(data, np.array([data[-1]]), axis=-1)
         return data
     if fps == 10:
         return data
@@ -84,8 +86,8 @@ def size_normalization(data: np.array, fps: int) -> np.array: # input shape = (s
             data_split = (data_split_1 + data_split_2) / 2
 
             if len(data_split_1) == 1:
-                new_array = np.concatenate([np.array([data_split]), data_res])
+                new_array = np.concatenate([data_split, data_res], axis=-1)
             else:
-                new_array = np.concatenate([data_split, data_res])
+                new_array = np.concatenate([data_split, data_res], axis=-1)
 
     return new_array
