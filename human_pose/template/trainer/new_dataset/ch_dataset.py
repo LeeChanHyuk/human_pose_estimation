@@ -69,7 +69,7 @@ class ch_dataset(torch.utils.data.Dataset):
                 body_poses = poses_from_one_video[6, :, :3] / 90
                 gaze_poses = poses_from_one_video[7]
                 #all_poses = np.concatenate([center_eyes, center_mouths, left_shoulders, right_shoulders, center_stomachs, head_poses, body_poses, gaze_poses], axis=1)
-                all_poses = np.concatenate([center_eyes, center_mouths, left_shoulders, right_shoulders, center_stomachs, head_poses], axis=1)
+                all_poses = np.concatenate([center_eyes, center_mouths, left_shoulders, right_shoulders, center_stomachs, head_poses, body_poses, gaze_poses], axis=1)
                 normalized_poses = []
                 for i in range(all_poses.shape[-1]):
                     i_all = all_poses[:,i]

@@ -79,7 +79,7 @@ def fill_the_blank(poses):
     if len(poses) > 0:
         poses.append(poses[-1])
     else:
-        poses.append([0, 0, 0, 0])
+        poses.append([0.0, 0.0, 0.0, 0.0])
     return poses
 
 def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 'save.avi', save_path = 'data'):
@@ -225,7 +225,7 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                 if depth.shape != frame.shape:
                     frame = cv2.resize(frame, dsize=(depth.shape[1], depth.shape[0]), interpolation=cv2.INTER_AREA)
 
-                depth = depth * 20
+                #depth = depth * 20
 
                 # frame shape for return normalized bounding box info
                 height, width = frame.shape[:2]

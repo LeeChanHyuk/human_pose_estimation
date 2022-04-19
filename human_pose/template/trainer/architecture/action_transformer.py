@@ -208,14 +208,11 @@ class ActionTransformer3(nn.Module):
             [0,0,1,1,1]]
         )).cuda()
         self.adjacency_matrix2 = torch.from_numpy(np.array(
-        [[1,1,0,0,0,0,1,1],
-        [1,1,1,1,0,1,1,0],
-        [0,1,1,1,1,1,0,0],
-        [0,1,1,1,1,1,0,0],
-        [0,0,1,1,1,1,0,0],
-        [0,1,1,1,1,1,0,0],
-        [1,1,0,0,0,0,1,1],
-        [1,0,0,0,0,0,1,1]]
+        [[1,1,0,0,0],
+        [1,1,1,1,0],
+        [0,1,1,1,1],
+        [0,1,1,1,1],
+        [0,0,1,1,1]]
         )).cuda()
         self.adjacency_matrix3 = torch.from_numpy(np.array(
         [[1,1,0,0,0,0,1,1],
@@ -235,7 +232,7 @@ class ActionTransformer3(nn.Module):
         self.eye_pose_embedding = nn.Embedding(num_embeddings=21*21*21*21, embedding_dim = 10)
 
         # encoder
-        self.pose_encoder = nn.Linear(3, 12)
+        self.pose_encoder = nn.Linear(10, 12)
         self.transition_encoder = nn.Linear(15, 20)
         """GAT Hyper parameters
         alpha = 0.1, 0.2, 0.3
@@ -276,7 +273,7 @@ class ActionTransformer3(nn.Module):
         postures = self.silu(postures)
         
         feature_matrix = torch.cat([transitions[:,:,0:4].unsqueeze(2), transitions[:,:,4:8].unsqueeze(2), transitions[:,:,8:12].unsqueeze(2), transitions[:,:,12:16].unsqueeze(2),transitions[:,:,16:20].unsqueeze(2), postures[:,:,0:4].unsqueeze(2), postures[:,:,4:8].unsqueeze(2), postures[:,:,8:12].unsqueeze(2)], dim=2)
-        x = self.GAT(feature_matrix, self.adjacency_matrix2)
+        x = self.GAT(feature_matrix, self.adjacency_matrix3)
         #x = self.GAT2(feature_matrix)
         x = x.reshape(x.shape[0], x.shape[1], -1)
         x = self.silu(x)

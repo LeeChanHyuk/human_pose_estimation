@@ -35,6 +35,7 @@ from tqdm import tnrange, tqdm
 from sklearn.metrics import roc_auc_score
 from sklearn import metrics
 from sklearn.metrics import precision_score, accuracy_score, roc_curve
+from flopco import FlopCo
 import itertools
 import wandb
 class Trainer():
@@ -83,8 +84,8 @@ class Trainer():
                     config['ntoken'] = self.conf.architecture['ntoken']
                     config['architecture_type'] = self.conf.architecture['type']
                     config['sequence_length'] = self.conf.architecture['sequence_length']
-                    self.wandb_run = wandb.init(project="Transformer size test", config=config)
-                    wandb.run.name = self.conf.architecture.type + '_' + 'no body pose + no eyes2'
+                    self.wandb_run = wandb.init(project="adjacency matrix test", config=config)
+                    wandb.run.name = self.conf.architecture.type + '_' + 'no eye pose head pose body pose vector in adjacency matrix'
                     wandb.run.save()
 
         # mixed precision
@@ -114,6 +115,9 @@ class Trainer():
         model = trainer.architecture.create(self.conf.architecture)
         model = model.to(device=self.rank, non_blocking=True)
         model = DDP(model, device_ids=[self.rank], output_device=self.rank, find_unused_parameters=True)
+        model_trainable_parameter, model_total_parameter = self.count_parameter_of_network(model=model)
+        print("Trainable parameter is " + str(model_trainable_parameter))
+        print("Total parameter is " + str(model_total_parameter))
 
         return model
 
@@ -161,6 +165,12 @@ class Trainer():
         else:
             model.load_state_dict({k if 'module.' in k else 'module.'+k: v for k, v in data[key].items()})
         return model
+
+    def count_parameter_of_network(self, model):
+        trainable_parameter = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        non_trainable_parameter = sum(p.numel() for p in model.parameters())
+        #stats = FlopCo(model, img_size = (64, 20, 8, 4))
+        return trainable_parameter, non_trainable_parameter
     
     def train_one_epoch(self, epoch, model, dl, criterion, optimizer,logger):
         # for step, (image, label) in tqdm(enumerate(dl), total=len(dl), desc="[Train] |{:3d}e".format(epoch), disable=not flags.is_master):

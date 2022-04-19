@@ -20,7 +20,7 @@ mlp_size:
 - 128
 - 256
 - 512
-mode: 2
+mode: 1
 nhead:
 - 1
 - 1
