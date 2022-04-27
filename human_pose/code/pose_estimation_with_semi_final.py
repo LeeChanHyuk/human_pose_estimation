@@ -13,6 +13,7 @@ from inspect import stack
 from lib2to3.pytree import BasePattern
 import math
 from ssl import ALERT_DESCRIPTION_NO_RENEGOTIATION
+from sys import flags
 from turtle import right
 import cv2
 import time
@@ -23,7 +24,10 @@ import numpy as np
 import pyrealsense2 as rs
 import re
 import random
+from torch import _empty_affine_quantized
 import zmq
+import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 from utils.draw_utils import draw_axis
 import utils.visualization_tool as visualization_tool
@@ -52,7 +56,7 @@ only_detection_mode = True
 use_realsense = True
 use_video = False
 annotation = False
-visualization = False
+visualization = True
 text_visualization = False
 body_pose_estimation = False
 head_pose_estimation = False # 12 프레임 저하
@@ -103,6 +107,28 @@ def fps_quantization(fps):
         fps = 40
     return fps
 
+def calibration(center_eyes):
+    # for D435
+    camera_horizontal_angle = 85.2
+    camera_vertical_angle = 58
+
+    i_width = 640
+    i_height = 480
+    
+    # before calibration
+    eye_x = (i_width/2) - center_eyes[0]
+    eye_y = (i_height/2) - center_eyes[1]
+    eye_z = center_eyes[2]
+
+    detected_x_angle = (camera_horizontal_angle / 2) * (eye_x / (i_width/2))
+    detected_y_angle = (camera_vertical_angle / 2) * (eye_y / (i_height/2))
+
+    new_x = eye_z * math.sin(math.radians(detected_x_angle)) * 7 / 9
+    new_y = eye_z * math.sin(math.radians(detected_y_angle))
+    y_offset = eye_z * math.sin(math.radians(camera_vertical_angle/2))
+
+    return new_x, new_y + 240, eye_z
+
 def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 'save.avi', save_path = 'data'):
     base_path = os.getcwd()
     fps = 20
@@ -139,7 +165,7 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
     yaw, pitch, roll = 0, 0, 0
     
     # Initialization step
-    fa = service.DepthFacialLandmarks("C:/Users/user/Desktop/git/human_pose_estimation/human_pose/code/head_pose_estimation_module/weights/sparse_face.tflite")
+    fa = service.DepthFacialLandmarks("C:/Users/IML/Desktop/renderer/human_pose_estimation/human_pose/code/head_pose_estimation_module/weights/sparse_face.tflite")
     print('Head detection module is initialized')
 
     # Initialinze Head pose estimation object handler
@@ -183,7 +209,7 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
         min_tracking_confidence=0.5,
         model_complexity=1) as pose:
         with mp_face_mesh.FaceMesh(
-            max_num_faces=5,
+            max_num_faces=1,
             min_detection_confidence=0.5) as face_mesh:
             #try
             print('Camera settings is started')
@@ -244,6 +270,7 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                     head_pose_estimation = True
                     body_pose_estimation = False
                 elif line[0].strip() == '3':
+                    only_detection_mode = False
                     head_pose_estimation = True
                     body_pose_estimation = True
                 else:
@@ -275,6 +302,7 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                     if frame is None:
                         break
                     depth = np.zeros((frame.shape[0], frame.shape[1]))
+                cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
                 cv2.imshow('frame', frame)
                 cv2.waitKey(1)
                 if depth.shape != frame.shape:
@@ -412,7 +440,7 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                             all_estimation_is_successed = False
 
                 # Visualization
-                if visualization and all_estimation_is_successed:
+                if visualization: #and all_estimation_is_successed:
                     # apply colormap to depthmap
                     depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth, alpha=0.03), cv2.COLORMAP_JET)
 
@@ -434,9 +462,19 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                         #print('head pose pitch: ', pitch)
                         #print('head pose roll: ', roll)
                         frame = draw_axis(frame, yaw, pitch, roll, [int((face_boxes[0][0] + face_boxes[0][2])/2), int(face_boxes[0][1] - 30)])
-                        #cv2.rectangle(frame, (int(face_boxes[0][0]), int(face_boxes[0][1])), (int(face_boxes[0][2]), int(face_boxes[0][3])), (255, 0, 0), 2, cv2.LINE_AA)
-                        #cv2.rectangle(frame, (int(left_eye_boxes[0][0]), int(left_eye_boxes[0][1])), (int(left_eye_boxes[0][2]), int(left_eye_boxes[0][3])), (0, 0, 255), 2, cv2.LINE_AA)
-                        #cv2.rectangle(frame, (int(right_eye_boxes[0][0]), int(right_eye_boxes[0][1])), (int(right_eye_boxes[0][2]), int(right_eye_boxes[0][3])), (0, 0, 255), 2, cv2.LINE_AA)
+                        cv2.putText(frame, 'yaw=' + str(int(yaw)), (0, 50), 1, 3, (0, 0, 255), 2)
+                        cv2.putText(frame, 'pitch=' + str(int(pitch)), (0, 100), 1, 3, (0, 0, 255), 2)
+                        cv2.putText(frame, 'roll=' + str(int(roll)), (0, 150), 1, 3, (0, 0, 255), 2)
+                        cv2.imshow('frame3', frame)
+                        cv2.waitKey(1)
+
+                    if only_detection_mode:
+                        if results.multi_face_landmarks:
+                            #cv2.rectangle(frame, (int(face_boxes[0][0]), int(face_boxes[0][1])), (int(face_boxes[0][2]), int(face_boxes[0][3])), (255, 0, 0), 2, cv2.LINE_AA)
+                            cv2.rectangle(frame, (int(left_eye_boxes[0][0]), int(left_eye_boxes[0][1])), (int(left_eye_boxes[0][2]), int(left_eye_boxes[0][3])), (0, 0, 255), 2, cv2.LINE_AA)
+                            cv2.rectangle(frame, (int(right_eye_boxes[0][0]), int(right_eye_boxes[0][1])), (int(right_eye_boxes[0][2]), int(right_eye_boxes[0][3])), (0, 255, 0), 2, cv2.LINE_AA)
+                            cv2.imshow('frame3', frame)
+                            cv2.waitKey(1)
 
                     if gaze_estimation:
                         for i, ep in enumerate([left_eye, right_eye]):
@@ -512,20 +550,25 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                             human_state = inference(inputs)
                             cv2.putText(frame, human_state, (0, 50), 1, 3, (0, 0, 255), 3)
                             #cv2.putText(stacked_frame, 'state: '+ human_state, (0, 50), 1, 3, (0, 0, 255), 3)
+                            cv2.imshow('frame3', frame)
+                            cv2.waitKey(1)
                     if zmq_enable:
+                        action_1 = ['right-up', 'right-down', 'right', 'left-up', 'left-down', 'left',' up', 'down',' zoom-in']
+                        eye_x, eye_y, eye_z = calibration(center_eyes[-1])
                         communication_write = open('communication.txt', 'r+')
                         communication_write.write(line[0])
-                        communication_write.write(str(round(center_eyes[-1][0])).zfill(3) + ' ' + str(round(center_eyes[-1][1])).zfill(3) + ' ' + str(round(center_eyes[-1][2])).zfill(3) + '\n')
-                        communication_write.write(str(round(head_poses[-1][0])).zfill(3) + ' ' + str(round(head_poses[-1][1])).zfill(3) + ' ' + str(round(head_poses[-1][2])).zfill(3) + '\n' if head_pose_estimation else '0 0 0\n')
+                        communication_write.write(str(round(0)).zfill(3) + ' ' + str(round(200)).zfill(3) + ' ' + str(round(600)).zfill(3) + '\n')
+                        #communication_write.write(str(round(eye_x)).zfill(3) + ' ' + str(round(eye_y+20)).zfill(3) + ' ' + str(round(eye_z)).zfill(3) + '\n')
+                        communication_write.write(str(round(head_poses[-1][1])).zfill(3) + ' ' + str(0).zfill(3) + ' ' + str(round(head_poses[-1][2])).zfill(3) + '\n' if head_pose_estimation else '0 0 0\n')
                         communication_write.write(human_state+'\n' if human_state is not None else 'standard\n')
                         communication_write.close()
-                        
 
 
 
 
 
 
+                cv2.namedWindow('MediaPipe Pose1', cv2.WINDOW_NORMAL)
                 cv2.imshow('MediaPipe Pose1', frame)
                 #cv2.imshow('MediaPipe Pose2', stacked_frame)
                 if result_record:
