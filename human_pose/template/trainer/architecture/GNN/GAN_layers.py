@@ -46,6 +46,9 @@ class GraphAttentionLayer(nn.Module):
         # e.shape (N, N)
         Wh1 = torch.matmul(Wh, self.a[:self.out_features, :]) # node matrix와 weight matrix(a) 의 절반 간의 mul # 여기는 왜  wh와 wh간의 곱을 안구하고, 다른 애와의 곱을 구하는 거지?
         # 이런 방식을 통해 구한 애들은 node간의 연결성을 가지고 있다. 그 후 이 연결성과 인풋을 곱함으로써 연결성을 반영해주는 것이다.
+        # 즉, 원래 값 기준으로 설명하자면, wh와 a의 곱은 1번노드의 8개의 값을 하나로, 2번 노드의 8개의 값을 하나로.. 계속 묶어주는 형식을 통해서 8개 node의 특징을 하나로 만들어준다.
+        # 따라서, transpose해서 더하면, i노드와 j노드의 특징을 더해주는 결과를 가지게 된다.
+        # 하지만 나는 이 과정에서 정보의 손실이 있을거라고 봤고, 각 노드의 특징을 더하는 방식 자체는 살리고 싶어서, (8,1)이 아닌 (8,8) matrix를 만들어서 서로 더해줬다.
         Wh2 = torch.matmul(Wh, self.a[self.out_features:, :]) # 이것도.
         Wh2 = Wh2.permute(0, 1, 3, 2)
         #Wh1 = self.expands(Wh1)

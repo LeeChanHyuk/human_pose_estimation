@@ -52,5 +52,5 @@ def draw_body_keypoints(frame, keypoints):
 	(255, 255, 0),
 	(0, 255, 255)]
 	for index, keypoint in enumerate(keypoints):
-		cv2.circle(frame, (int(keypoint[0]), int(keypoint[1])), 3, colors[index], 3)
+		cv2.circle(frame, (int(keypoint[0]), int(keypoint[1])), 3, colors[index], 30)
 	return frame
