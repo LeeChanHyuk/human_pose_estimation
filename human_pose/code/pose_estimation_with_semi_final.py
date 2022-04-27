@@ -63,6 +63,7 @@ head_pose_estimation = False # 12 프레임 저하
 gaze_estimation = False # 22프레임 저하
 result_record = False
 zmq_enable = True
+only_action_mode = True
 
 landmark_names = [
     'nose',
@@ -549,19 +550,24 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                             inputs = np.expand_dims(np.array(data),axis=0)
                             human_state = inference(inputs)
                             cv2.putText(frame, human_state, (0, 50), 1, 3, (0, 0, 255), 3)
-                            #cv2.putText(stacked_frame, 'state: '+ human_state, (0, 50), 1, 3, (0, 0, 255), 3)
                             cv2.imshow('frame3', frame)
                             cv2.waitKey(1)
                     if zmq_enable:
-                        action_1 = ['right-up', 'right-down', 'right', 'left-up', 'left-down', 'left',' up', 'down',' zoom-in']
-                        eye_x, eye_y, eye_z = calibration(center_eyes[-1])
-                        communication_write = open('communication.txt', 'r+')
-                        communication_write.write(line[0])
-                        communication_write.write(str(round(0)).zfill(3) + ' ' + str(round(200)).zfill(3) + ' ' + str(round(600)).zfill(3) + '\n')
-                        #communication_write.write(str(round(eye_x)).zfill(3) + ' ' + str(round(eye_y+20)).zfill(3) + ' ' + str(round(eye_z)).zfill(3) + '\n')
-                        communication_write.write(str(round(head_poses[-1][1])).zfill(3) + ' ' + str(0).zfill(3) + ' ' + str(round(head_poses[-1][2])).zfill(3) + '\n' if head_pose_estimation else '0 0 0\n')
-                        communication_write.write(human_state+'\n' if human_state is not None else 'standard\n')
-                        communication_write.close()
+                        if only_action_mode:
+                            communication_write = open('communication.txt', 'r+')
+                            communication_write.write(line[0])
+                            communication_write.write(str(round(0)).zfill(3) + ' ' + str(round(200)).zfill(3) + ' ' + str(round(600)).zfill(3) + '\n')
+                            communication_write.write(str(round(head_poses[-1][1])).zfill(3) + ' ' + str(0).zfill(3) + ' ' + str(round(head_poses[-1][2])).zfill(3) + '\n' if head_pose_estimation else '0 0 0\n')
+                            communication_write.write(human_state+'\n' if human_state is not None else 'standard\n')
+                            communication_write.close()
+                        else:
+                            eye_x, eye_y, eye_z = calibration(center_eyes[-1])
+                            communication_write = open('communication.txt', 'r+')
+                            communication_write.write(line[0])
+                            communication_write.write(str(round(eye_x)).zfill(3) + ' ' + str(round(eye_y+20)).zfill(3) + ' ' + str(round(eye_z)).zfill(3) + '\n')
+                            communication_write.write(str(round(head_poses[-1][1])).zfill(3) + ' ' + str(0).zfill(3) + ' ' + str(round(head_poses[-1][2])).zfill(3) + '\n' if head_pose_estimation else '0 0 0\n')
+                            communication_write.write(human_state+'\n' if human_state is not None else 'standard\n')
+                            communication_write.close()
 
 
 
