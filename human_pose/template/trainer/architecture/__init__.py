@@ -6,7 +6,6 @@ from . import toy
 LOGGER = logging.getLogger(__name__)
 from efficientnet_pytorch import EfficientNet
 from timm.models import create_model
-import segmentation_models_pytorch as smp
 from . import lstm
 from . import action_transformer
 from . import graph_neural_network
@@ -97,14 +96,6 @@ def create(conf, num_classes=None):
             architecture = Video_action_transformer_v1.Semi_Transformer(conf['classes'], conf['sequence_length'])
         elif architecture_name == 'v2':
             architecture_name = Video_action_transformer_v2.Semi_Transformer(conf['classes'], conf['sequence_length'])
-    elif base == 'unet':
-        architecture = smp.Unet(
-        encoder_name=conf['backbone'],      # choose encoder, e.g. mobilenet_v2 or efficientnet-b7
-        encoder_weights=conf['weights'],     # use `imagenet` pre-trained weights for encoder initialization
-        in_channels=3,                  # model input channels (1 for gray-scale images, 3 for RGB, etc.)
-        classes=conf['num_classes'],        # model output channels (number of classes in your dataset)
-        activation=None,
-    )
     else:
         raise AttributeError(f'not support architecture config: {conf}')
 

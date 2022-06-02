@@ -52,7 +52,7 @@ mp_face_mesh = mp.solutions.face_mesh
 inference_mode = True
 inference_mode_in_the_wild = True
 
-only_detection_mode = False
+only_detection_mode = True
 use_realsense = True
 use_video = False
 annotation = False
@@ -63,7 +63,7 @@ head_pose_estimation = True # 12 프레임 저하
 gaze_estimation = False # 22프레임 저하
 result_record = False
 zmq_enable = True
-only_action_mode = False
+only_action_mode = True
 
 landmark_names = [
     'nose',
@@ -283,13 +283,6 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                 communication_read.close()
 
                 start_time = time.time()
-                face_box_per_man = []
-                head_pose_per_man = []
-                body_pose_per_man = []
-                eye_pose_per_man = []
-                depth_per_man = []
-                center_face_per_man = []
-                no_looking = []
                 all_estimation_is_successed = True
                 #a = cv2.waitKey(10)
                 if use_realsense:
@@ -338,60 +331,37 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                             face_landmarks=face_landmarks,
                             width = width,
                             height = height)
-                        face_boxes = np.array(face_boxes)
-                        face_box_per_man.append(face_boxes)
-                        center_face_x = int((face_boxes[0][0] + face_boxes[0][2]) / 2)
-                        center_face_y = int(face_boxes[0][3])
-                        center_depth_of_face = depth[center_face_y, center_face_x]
-                        depth_per_man.append(center_depth_of_face)
-                        center_face_per_man.append((center_face_x, center_face_y))
-                        left_eye_boxes = np.array(left_eye_boxes)
-                        right_eye_boxes = np.array(right_eye_boxes)
-                        center_eye_x = (left_eye_boxes[0][0] + left_eye_boxes[0][2]) / 2
-                        center_eye_y = (left_eye_boxes[0][1] + left_eye_boxes[0][3]) / 2
-                        if len(depth.shape) > 2:
-                            center_eye_z = depth[max(0, min(479, int(center_eye_y))), max(0, min(639, int(center_eye_x))), 0]
-                        else:
-                            center_eye_z = depth[max(0, min(479, int(center_eye_y))), max(0, min(639, int(center_eye_x)))]
-                        center_eye = [center_eye_x, center_eye_y, center_eye_z, 0]
-                        center_eyes.append(center_eye)
-                        #cv2.rectangle(frame, (int(left_eye_boxes[0][0]), int(left_eye_boxes[0][1])), (int(left_eye_boxes[0][2]), int(left_eye_boxes[0][3])), (0, 0, 255), 2, cv2.LINE_AA)
-                        cv2.imshow('frame3', frame)
-                        cv2.waitKey(1)
-
+                    face_boxes = np.array(face_boxes)
+                    left_eye_boxes = np.array(left_eye_boxes)
+                    right_eye_boxes = np.array(right_eye_boxes)
+                    center_eye_x = (left_eye_boxes[0][0] + left_eye_boxes[0][2]) / 2
+                    center_eye_y = (left_eye_boxes[0][1] + left_eye_boxes[0][3]) / 2
+                    if len(depth.shape) > 2:
+                        center_eye_z = depth[max(0, min(479, int(center_eye_y))), max(0, min(639, int(center_eye_x))), 0]
+                    else:
+                        center_eye_z = depth[max(0, min(479, int(center_eye_y))), max(0, min(639, int(center_eye_x)))]
+                    center_eye = [center_eye_x, center_eye_y, center_eye_z, 0]
+                    center_eyes.append(center_eye)
 
                     # raw copy for reconstruction
                     feed = frame.copy()
                     
                     # Estimate head pose
                     if head_pose_estimation:
-                        for face_boxes in face_box_per_man:
-                            for results in fa.get_landmarks(feed, face_boxes):
-                                pitch, yaw, roll = handler(frame, results, color)
-                                #head_pose_stabilizers[0].update([temp_pitch])
-                                #head_pose_stabilizers[1].update([temp_yaw])
-                                #head_pose_stabilizers[2].update([temp_roll])
+                        for results in fa.get_landmarks(feed, face_boxes):
+                            temp_pitch, temp_yaw, temp_roll = handler(frame, results, color)
+                            head_pose_stabilizers[0].update([temp_pitch])
+                            head_pose_stabilizers[1].update([temp_yaw])
+                            head_pose_stabilizers[2].update([temp_roll])
 
-                                #pitch = head_pose_stabilizers[0].state[0][0]
-                                #yaw = head_pose_stabilizers[1].state[0][0]
-                                #roll = head_pose_stabilizers[2].state[0][0]
+                            pitch = head_pose_stabilizers[0].state[0][0]
+                            yaw = head_pose_stabilizers[1].state[0][0]
+                            roll = head_pose_stabilizers[2].state[0][0]
 
-                                if inference_mode:
-                                    head_pose_per_man.append([yaw, pitch, roll, 0])
-                                    head_poses.append([yaw, pitch, roll, 0])
-                        
-                    min_val = min(depth_per_man)
-                    min_index = depth_per_man.index(min_val)
-                    min_head_pose = 999
-                    min_head_pose_index = 0
-                    for index, face in enumerate(face_box_per_man):
-                        if index == min_index:
-                            cv2.line(frame, (int(width/2), height-1), center_face_per_man[index], (0, 255, 0), 3)
-                            cv2.rectangle(frame, (int(face_box_per_man[index][0][0]), int(face_box_per_man[index][0][1])), (int(face_box_per_man[index][0][2]), int(face_box_per_man[index][0][3])), (0,255,0), 2, cv2.LINE_AA)
-                            cv2.putText(frame, 'Main User', (int(face[0][0]), int(face[0][1])), 1, 2, (0, 255, 0), 2)
-                        else:
-                            cv2.line(frame, (int(width/2), height-1), center_face_per_man[index], (255, 0, 0), 1)
-                            cv2.rectangle(frame, (int(face_box_per_man[index][0][0]), int(face_box_per_man[index][0][1])), (int(face_box_per_man[index][0][2]), int(face_box_per_man[index][0][3])), (255,0,0), 2, cv2.LINE_AA)
+                            if annotation:
+                                head_poses.append([yaw, pitch, roll, 0])
+                            if inference_mode:
+                                head_poses.append([yaw, pitch, roll, 0])
                             
                     # Estimate gaze
                     if gaze_estimation:
@@ -420,7 +390,6 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                         if annotation:
                             gaze_poses.append([gazes[0][0], gazes[0][1], gazes[1][0], gazes[1][1]])
                         if inference_mode:
-                            eye_pose_per_man.append([gazes[0][0], gazes[0][1], gazes[1][0], gazes[1][1]])
                             gaze_poses.append([gazes[0][0], gazes[0][1], gazes[1][0], gazes[1][1]])
                 else:
                     if annotation or inference_mode:
@@ -466,7 +435,6 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                         if annotation:
                             body_poses.append([upper_body_yaw, upper_body_pitch, upper_body_roll, 0])
                         if inference_mode:
-                            body_pose_per_man.append([upper_body_yaw, upper_body_pitch, upper_body_roll])
                             body_poses.append([upper_body_yaw, upper_body_pitch, upper_body_roll, 0])
 
                     else:
@@ -500,18 +468,20 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                         #print('head pose yaw: ', yaw)
                         #print('head pose pitch: ', pitch)
                         #print('head pose roll: ', roll)
-                        for index, face_boxes in enumerate(face_box_per_man):
-                            yaw, pitch, roll = head_pose_per_man[index][0], head_pose_per_man[index][1], head_pose_per_man[index][2]
-                            frame = draw_axis(frame, yaw, pitch, roll, [int((face_boxes[0][0] + face_boxes[0][2])/2), int(face_boxes[0][1] - 30)])
-                            #if body_pose_estimation is False:
-                                #cv2.putText(frame, 'yaw=' + str(int(yaw)), (0, 50), 1, 3, (0, 0, 255), 2)
-                                #cv2.putText(frame, 'pitch=' + str(int(pitch)), (0, 100), 1, 3, (0, 0, 255), 2)
-                                #cv2.putText(frame, 'roll=' + str(int(roll)), (0, 150), 1, 3, (0, 0, 255), 2)
+                        frame = draw_axis(frame, yaw, pitch, roll, [int((face_boxes[0][0] + face_boxes[0][2])/2), int(face_boxes[0][1] - 30)])
+                        if body_pose_estimation is False:
+                            cv2.putText(frame, 'yaw=' + str(int(yaw)), (0, 50), 1, 3, (0, 0, 255), 2)
+                            cv2.putText(frame, 'pitch=' + str(int(pitch)), (0, 100), 1, 3, (0, 0, 255), 2)
+                            cv2.putText(frame, 'roll=' + str(int(roll)), (0, 150), 1, 3, (0, 0, 255), 2)
 
 
-                    #if only_detection_mode:
-                    #    if results.multi_face_landmarks:
-                    #        #cv2.rectangle(frame, (int(face_boxes[0][0]), int(face_boxes[0][1])), (int(face_boxes[0][2]), int(face_boxes[0][3])), (255, 0, 0), 2, cv2.LINE_AA)
+                    if only_detection_mode:
+                        if results.multi_face_landmarks:
+                            #cv2.rectangle(frame, (int(face_boxes[0][0]), int(face_boxes[0][1])), (int(face_boxes[0][2]), int(face_boxes[0][3])), (255, 0, 0), 2, cv2.LINE_AA)
+                            cv2.rectangle(frame, (int(left_eye_boxes[0][0]), int(left_eye_boxes[0][1])), (int(left_eye_boxes[0][2]), int(left_eye_boxes[0][3])), (0, 0, 255), 2, cv2.LINE_AA)
+                            cv2.rectangle(frame, (int(right_eye_boxes[0][0]), int(right_eye_boxes[0][1])), (int(right_eye_boxes[0][2]), int(right_eye_boxes[0][3])), (0, 255, 0), 2, cv2.LINE_AA)
+                            cv2.imshow('frame3', frame)
+                            cv2.waitKey(1)
 
                     if gaze_estimation:
                         for i, ep in enumerate([left_eye, right_eye]):
@@ -605,23 +575,17 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                             communication_write.write(human_state+'\n' if human_state is not None else 'standard\n')
                             communication_write.close()
                         else:
-                            if len(depth_per_man) > 0:
-                                min_val = min(depth_per_man)
-                                min_index = depth_per_man.index(min_val)
-                                if min_index < len(head_pose_per_man):
-                                    main_center_eye = center_face_per_man[min_index]
-                                    main_head_pose = head_pose_per_man[min_index]
-                                    eye_x, eye_y, eye_z = calibration([main_center_eye[0], main_center_eye[1], min_val])
-                                    communication_write = open('communication.txt', 'r+')
-                                    communication_write.write(line[0])
-                                    #print('eye position')
-                                    #print(eye_x, eye_y, eye_z)
-                                    #print('head pose')
-                                    #print(head_poses[-1][0], head_poses[-1][1], head_poses[-1][2])
-                                    communication_write.write(str(round(eye_x)).zfill(3) + ' ' + str(round(eye_y+20)).zfill(3) + ' ' + str(round(eye_z)).zfill(3) + '\n')
-                                    communication_write.write(str(round(main_head_pose[1])).zfill(3) + ' ' + str(round(main_head_pose[0])).zfill(3) + ' ' + str(round(main_head_pose[2])).zfill(3) + '\n' if head_pose_estimation else '0 0 0\n')
-                                    communication_write.write(human_state+'\n' if human_state is not None else 'standard\n')
-                                    communication_write.close()
+                            eye_x, eye_y, eye_z = calibration(center_eyes[-1])
+                            communication_write = open('communication.txt', 'r+')
+                            communication_write.write(line[0])
+                            #print('eye position')
+                            #print(eye_x, eye_y, eye_z)
+                            #print('head pose')
+                            #print(head_poses[-1][0], head_poses[-1][1], head_poses[-1][2])
+                            communication_write.write(str(round(eye_x)).zfill(3) + ' ' + str(round(eye_y+20)).zfill(3) + ' ' + str(round(eye_z)).zfill(3) + '\n')
+                            communication_write.write(str(round(head_poses[-1][1])).zfill(3) + ' ' + str(0).zfill(3) + ' ' + str(round(head_poses[-1][2])).zfill(3) + '\n' if head_pose_estimation else '0 0 0\n')
+                            communication_write.write(human_state+'\n' if human_state is not None else 'standard\n')
+                            communication_write.close()
 
 
 

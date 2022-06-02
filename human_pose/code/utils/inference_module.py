@@ -14,7 +14,7 @@ import time
 
 def build_model(num_classes=-1):
     base_path = os.getcwd()
-    with open(os.path.join(base_path, "C:/Users/user/Desktop/git/human_pose_estimation/human_pose/template/conf/architecture/action_transformer.yaml")) as f:
+    with open(os.path.join(base_path, "C:/Users/user/Desktop/version/human_pose_estimation/human_pose/template/conf/architecture/action_transformer.yaml")) as f:
         list_doc = yaml.load(f.read(), Loader=yaml.FullLoader)
         order = list_doc['mode']
         architecture = action_transformer.ActionTransformer3(
@@ -48,7 +48,7 @@ def load_for_inference(rank, checkpoint_name = None):
 
 
 results = np.zeros((20), dtype=np.uint8)
-checkpoint_name = 'C:/Users/user/Desktop/git/human_pose_estimation/human_pose/output/head_pose_based_best.pth.tar'
+checkpoint_name = 'C:/Users/user/Desktop/version/human_pose_estimation/human_pose/output/head_pose_based_best.pth.tar'
 model = load_for_inference(0, checkpoint_name=checkpoint_name)
 
 def inference(pose_sequence):
@@ -79,7 +79,9 @@ def inference(pose_sequence):
 
     actions = [ 'nolooking', 'yaw-', 'yaw+', 'pitch-', 'pitch+', 'roll-', 'roll+', 'left', 'left-up', 'up',
     'right-up', 'right', 'right-down', 'down', 'left-down', 'zoom-in', 'zoom-out','standard']
-    if probability > threshold and (max_voted_action_val > 15 and y_pred == max_voted_action_class) or (max_voted_action_val > 10 and max_voted_action_class == 0):
+    if probability > threshold and (max_voted_action_val > 15 and y_pred == max_voted_action_class) and max_voted_action_class == 0:
+        state = 'standard'
+    elif probability > threshold and (max_voted_action_val > 15 and y_pred == max_voted_action_class):
         state = actions[max_voted_action_class]
     else:
         state = 'standard'

@@ -13,7 +13,6 @@ def router_function():
 
     while True:
         # message read from txt file to communicate with tracker
-        start_time = time.time()
         communication_read = open('communication.txt', 'r')
         for i in range(4):
             line[i] = communication_read.readline()
@@ -39,4 +38,3 @@ def router_function():
         elif line[0].strip() == '3':
             send_message = 'A' + ' ' + line[1].strip() + ' ' + line[2].strip() + ' ' + line[3].strip()
         to_renderer.send_string(send_message)
-        print('fps = ', str(1/(time.time() - start_time)))
