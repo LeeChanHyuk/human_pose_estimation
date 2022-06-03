@@ -116,14 +116,14 @@ def main_user_drawing(frame, face_box_per_man, center_face_per_man, main_user_in
         if index == main_user_index:
             cv2.line(frame, (int(width/2), height-1), (center_face_per_man[index][0], center_face_per_man[index][1]), (0, 255, 0), 3)
             cv2.rectangle(frame, (int(face_box_per_man[index][0][0]), int(face_box_per_man[index][0][1])), (int(face_box_per_man[index][0][2]), int(face_box_per_man[index][0][3])), (0,255,0), 2, cv2.LINE_AA)
-            cv2.putText(frame, 'Main User', (int(face[0][0]), int(face[0][1])), 1, 2, (0, 255, 0), 2)
+            cv2.putText(frame, 'M', (int((face[0][0] + face[0][2])/2), int(face[0][1])), 1, 2, (0, 255, 0), 2)
         else:
             cv2.line(frame, (int(width/2), height-1), (center_face_per_man[index][0], center_face_per_man[index][1]), (255, 0, 0), 1)
             cv2.rectangle(frame, (int(face_box_per_man[index][0][0]), int(face_box_per_man[index][0][1])), (int(face_box_per_man[index][0][2]), int(face_box_per_man[index][0][3])), (255,0,0), 2, cv2.LINE_AA)
     return frame
 
 def main_user_classification(frame, face_box_per_man, center_face_per_man, head_pose_per_man):
-    man_score = [100] * len(center_face_per_man)
+    man_score = [4000] * len(center_face_per_man)
     for index, center_face in enumerate(center_face_per_man):
         man_score[index] -= center_face_per_man[index][2]
 
@@ -317,8 +317,6 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                         center_eye = [center_eye_x, center_eye_y, center_eye_z, 0]
                         center_eyes.append(center_eye)
                         #cv2.rectangle(frame, (int(left_eye_boxes[0][0]), int(left_eye_boxes[0][1])), (int(left_eye_boxes[0][2]), int(left_eye_boxes[0][3])), (0, 0, 255), 2, cv2.LINE_AA)
-                        cv2.imshow('frame3', frame)
-                        cv2.waitKey(1)
 
 
                     # raw copy for reconstruction
@@ -342,7 +340,6 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                         left_gaze[1] = -left_gaze[1]
                         right_gaze = right_eye.gaze.copy()
                         gazes = [left_gaze, right_gaze]
-                        gazes = [[left_x, left_y], [right_x, right_y]]
                         eye_poses.append([gazes[0][0], gazes[0][1], gazes[1][0], gazes[1][1]])
 
                     if body_pose_estimation and len(face_box_per_man) == 1:
@@ -389,48 +386,51 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                     # apply colormap to depthmap
                     depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth, alpha=0.03), cv2.COLORMAP_JET)
 
-                    if body_pose_estimation and results.pose_landmarks:
-                        cv2.circle(depth_colormap, (int(left_shoulder[0]-left_y_offset), int(left_shoulder[1]+left_x_offset)), 3, (0, 255, 0), 3)
-                        cv2.circle(depth_colormap, (int(right_shoulder[0]+right_y_offset), int(right_shoulder[1]+right_x_offset)), 3, (0, 255, 0), 3)
-                        cv2.imshow('depth', depth_colormap)
-                        #mp_drawing.draw_landmarks(
-                        #    frame,
-                        #    results.pose_landmarks,
-                        #    mp_pose.POSE_CONNECTIONS,
-                        #    landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style())
-                        if left_shoulder is not None and right_shoulder is not None:
-                            frame = draw_axis(frame, upper_body_yaw, upper_body_pitch, upper_body_roll, [int((left_shoulder[0] + right_shoulder[0])/2), int(left_shoulder[1])],
-                            color1=(255,255,0), color2=(255,0,255), color3=(0,255,255))
-
                     if head_pose_estimation and yaw > -999:
                         for index, face_boxes in enumerate(face_box_per_man):
-                            yaw, pitch, roll = head_poses[index][0], head_pose_per_man[index][1], head_pose_per_man[index][2]
+                            yaw, pitch, roll = head_pose_per_man[index][0], head_pose_per_man[index][1], head_pose_per_man[index][2]
                             frame = draw_axis(frame, yaw, pitch, roll, [int((face_boxes[0][0] + face_boxes[0][2])/2), int(face_boxes[0][1] - 30)])
-
-                    if gaze_estimation:
-                        for i, ep in enumerate([left_eye, right_eye]):
-                            for (x, y) in ep.landmarks[16:33]:
-                                color = (0, 255, 0)
-                                if ep.eye_sample.is_left:
-                                    color = (255, 0, 0)
-                                cv2.circle(frame,(int(round(x)), int(round(y))), 1, color, -1, lineType=cv2.LINE_AA)
-                            gaze = gazes[i]
-                            length = 60.0
-                            draw_gaze(frame, ep.landmarks[-2], gaze, length=length, thickness=2)
-
-                    if text_visualization:
-                        width = int(width * 1.5)
-                        zero_array = np.zeros((height, width, 3), dtype=np.uint8)
+                    try:
                         if body_pose_estimation and results.pose_landmarks:
-                            center_shoulder = (left_shoulder + right_shoulder) / 2
-                            zero_array= visualization_tool.draw_body_information(zero_array, width, height, round(center_shoulder[0], 2), round(center_shoulder[1], 2), round(center_shoulder[2], 2), 
-                            round(upper_body_yaw, 2), round(upper_body_pitch, 2), round(upper_body_roll, 2))
-                        if head_pose_estimation and yaw:
-                            zero_array = visualization_tool.draw_face_information(zero_array, width, height, round(center_face_per_man[main_user_index][0], 2), round(center_face_per_man[main_user_index][1], 2), round(center_face_per_man[main_user_index][2], 2), round(yaw, 2)
-                            , round(pitch, 2), round(roll, 2))
-                        if gaze_estimation and gazes is not None:
-                            zero_array = visualization_tool.draw_gaze_information(zero_array,width, height, round(center_eye_x, 2), round(center_eye_y, 2), round(center_eye_z, 2), gazes)
-                        stacked_frame = np.concatenate([frame, zero_array], axis=1)
+                            cv2.circle(depth_colormap, (int(left_shoulder[0]-left_y_offset), int(left_shoulder[1]+left_x_offset)), 3, (0, 255, 0), 3)
+                            cv2.circle(depth_colormap, (int(right_shoulder[0]+right_y_offset), int(right_shoulder[1]+right_x_offset)), 3, (0, 255, 0), 3)
+                            cv2.imshow('depth', depth_colormap)
+                            #mp_drawing.draw_landmarks(
+                            #    frame,
+                            #    results.pose_landmarks,
+                            #    mp_pose.POSE_CONNECTIONS,
+                            #    landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style())
+                            if left_shoulder is not None and right_shoulder is not None:
+                                frame = draw_axis(frame, upper_body_yaw, upper_body_pitch, upper_body_roll, [int((left_shoulder[0] + right_shoulder[0])/2), int(left_shoulder[1])],
+                                color1=(255,255,0), color2=(255,0,255), color3=(0,255,255))
+
+
+                        if gaze_estimation:
+                            for i, ep in enumerate([left_eye, right_eye]):
+                                for (x, y) in ep.landmarks[16:33]:
+                                    color = (0, 255, 0)
+                                    if ep.eye_sample.is_left:
+                                        color = (255, 0, 0)
+                                    cv2.circle(frame,(int(round(x)), int(round(y))), 1, color, -1, lineType=cv2.LINE_AA)
+                                gaze = gazes[i]
+                                length = 60.0
+                                draw_gaze(frame, ep.landmarks[-2], gaze, length=length, thickness=2)
+
+                        if text_visualization:
+                            width = int(width * 1.5)
+                            zero_array = np.zeros((height, width, 3), dtype=np.uint8)
+                            if body_pose_estimation and results.pose_landmarks:
+                                center_shoulder = (left_shoulder + right_shoulder) / 2
+                                zero_array= visualization_tool.draw_body_information(zero_array, width, height, round(center_shoulder[0], 2), round(center_shoulder[1], 2), round(center_shoulder[2], 2), 
+                                round(upper_body_yaw, 2), round(upper_body_pitch, 2), round(upper_body_roll, 2))
+                            if head_pose_estimation and yaw:
+                                zero_array = visualization_tool.draw_face_information(zero_array, width, height, round(center_face_per_man[main_user_index][0], 2), round(center_face_per_man[main_user_index][1], 2), round(center_face_per_man[main_user_index][2], 2), round(yaw, 2)
+                                , round(pitch, 2), round(roll, 2))
+                            if gaze_estimation and gazes is not None:
+                                zero_array = visualization_tool.draw_gaze_information(zero_array,width, height, round(center_eye_x, 2), round(center_eye_y, 2), round(center_eye_z, 2), gazes)
+                            stacked_frame = np.concatenate([frame, zero_array], axis=1)
+                    except:
+                        print('no posture is detected')
 
                 if action_recognition:
                     rounded_fps = round(fps)
@@ -467,8 +467,6 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                             human_state = inference(inputs)
                             frame = cv2.flip(frame, 1)
                             cv2.putText(frame, human_state, (0, 50), 1, 3, (0, 0, 255), 3)
-                            cv2.imshow('frame3', frame)
-                            cv2.waitKey(1)
                     if zmq_enable:
                         if len(depth_per_man) > 0:
                             min_val = min(depth_per_man)
