@@ -28,7 +28,7 @@ def data_preprocessing(data: np.array, fps) -> np.array:
     head_poses = poses_from_one_video[5, :, :3] / 90
     #body_poses = poses_from_one_video[6, :, :3] / 90
     #gaze_poses = poses_from_one_video[7]
-    all_poses = np.concatenate([center_eyes, center_mouths, left_shoulders, right_shoulders, center_stomachs, head_poses], axis=1)
+    all_poses = np.concatenate([center_eyes, center_mouths, left_shoulders, right_shoulders, center_stomachs, head_poses], axis=1) # (frames, values * 6)
     normalized_poses = []
     for i in range(all_poses.shape[-1]):
         i_all = all_poses[:,i]
@@ -46,7 +46,7 @@ def data_normalization(data : np.array) -> np.array:
 
 def size_normalization(data: np.array, fps: int) -> np.array: # input shape = (sequence_length, 1)
     normalize_num = int(data.shape[0] - 20)
-    if normalize_num < 0:
+    if normalize_num < 0: # Append the feature in last frame to every feature. # if the frame rate is under than 10.
         for i in range(abs(normalize_num)):
             appended_data = np.array(data[-1])
             data = np.append(data, np.array([data[-1]]), axis=-1)
@@ -54,40 +54,24 @@ def size_normalization(data: np.array, fps: int) -> np.array: # input shape = (s
     if fps == 10:
         return data
     elif fps < 20:
-        normalize_interval = data.shape[0] // normalize_num
-        splited_data = []
-        for i in range(normalize_num):
-            normalized_data = data[i*normalize_interval: (i+1) * normalize_interval]
-            temp_data = (normalized_data[0] + normalized_data[1]) / 2
-            if len(normalized_data) == 2:
-                temp_data = np.array([temp_data])
-            elif len(normalized_data) == 3:
-                res_data = normalized_data[2]
-                temp_data = np.array([temp_data, res_data])
-            elif len(normalized_data) > 3:
-                res_data = np.array([normalized_data[x] for x in range(2, len(normalized_data))])
-                temp_data = np.concatenate([np.array([temp_data]), res_data])
-            splited_data.append(temp_data)
-        new_array = np.concatenate([splited_data[x] for x in range(len(splited_data))], axis=-1)
-        if data.shape[0] % normalize_num != 0:
-            new_array = np.concatenate([new_array, data[normalize_num*normalize_interval: len(data)]], axis=0)
-    else:
-        data_1 = data[0:len(data):2]
-        data_2 = data[1:len(data):2]
-        new_array = (data_1 + data_2) / 2
-        if fps>20:
-
-            normalize_num = int((data.shape[0]/2) - 20)
-
-            data_split = new_array[0:2*normalize_num]
-            data_res = new_array[2*normalize_num:]
-            data_split_1 = data_split[0:len(data_split):2]
-            data_split_2 = data_split[1:len(data_split):2]
-            data_split = (data_split_1 + data_split_2) / 2
-
-            if len(data_split_1) == 1:
-                new_array = np.concatenate([data_split, data_res], axis=-1)
-            else:
-                new_array = np.concatenate([data_split, data_res], axis=-1)
-
+        normalize_num = 2 * (data.shape[0] - 20)
+        temp_data = data[-normalize_num:]
+        temp_data = (data[0:len(temp_data):2] + data[1:len(temp_data):2]) / 2
+        new_array = np.concatenate([data[0:len(data) - normalize_num], temp_data])
+    else: # fps > 20:
+        new_array = data
+        while len(new_array) > 40:
+            if len(new_array) % 2:
+                new_array = new_array[0:len(new_array)-1]
+            data_1 = new_array[0:len(new_array):2]
+            data_2 = new_array[1:len(new_array):2]
+            new_array = (data_1 + data_2) / 2
+        if len(new_array) % 2:
+            new_array = new_array[0:len(new_array)-1]
+        normalize_num = 2 * (new_array.shape[0] - 20)
+        temp_data = new_array[-normalize_num:]
+        temp_data = (temp_data[0:len(temp_data):2] + temp_data[1:len(temp_data):2]) / 2
+        new_array = np.concatenate([new_array[0:len(new_array) - normalize_num], temp_data])
+    if new_array.shape[0] > 20:
+        print('call')
     return new_array

@@ -1,6 +1,6 @@
 import os
 from multiprocessing import Process
-from pose_estimation_with_semi_final import main_function
+from pose_estimation_clean_version import main_function
 from zmq_router import router_function
 from time import sleep
 if __name__ == "__main__":

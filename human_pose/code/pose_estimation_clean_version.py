@@ -5,17 +5,22 @@
 # Head pose estimation module is from 1996scarlet (https://github.com/1996scarlet/Dense-Head-Pose-Estimation)
 # Gaze estimation module is from david-wb (https://github.com/david-wb/gaze-estimation)
 
+from lib2to3.pytree import BasePattern
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 # Import librar
 import math
 import cv2
 import time
-import os
 import mediapipe as mp
 import numpy as np
 import pyrealsense2 as rs
 import re
 import random
 import os
+from data.human import HumanInfo
 
 from sqlalchemy import true
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
@@ -23,7 +28,6 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 # Import modules from directory
 from utils.draw_utils import draw_axis
 import utils.visualization_tool as visualization_tool
-from Stabilizer.stabilizer import Stabilizer
 from utils.inference_module import inference
 import head_pose_estimation_module.service as service
 from gaze_estimation_module.util.gaze import draw_gaze
@@ -40,22 +44,8 @@ mp_face_detection = mp.solutions.face_detection
 mp_face_mesh = mp.solutions.face_mesh
 
 # Mode (If you want to use multiple functions, then make that you use true)
-face_tracking = True
-head_pose_estimation = True # 12 프레임 저하
-body_pose_estimation = True
-gaze_estimation = False # 22프레임 저하
-action_recognition = True
-
-# Input source mode
-use_realsense = True
-use_video = False
-
-# Additional mode
-visualization = True
-text_visualization = False # for visualizing quantitative result of estimating value
-annotation = False # for making dataset
-result_record = False # if you want to record your result of the estimation, please make this value true
-zmq_enable = True # For communication with super multiview renderer
+mode = 3
+precise_value_visualization = True
 
 # Landmark / action names
 landmark_names = [
@@ -79,107 +69,316 @@ landmark_names = [
 actions = [ 'left', 'left-up', 'up',
 'right-up', 'right', 'right-down', 'down', 'left-down', 'zoom-in', 'zoom-out','standard']
 
-# To put the pseudo value for the fail of the tracking
-def fill_the_blank(poses):
-    if len(poses) > 0:
-        poses.append(poses[-1])
-    else:
-        poses.append([1.0, 1.0, 1.0, 1.0])
-    return poses
 
 # This func will be developed with precise calibration code
-def calibration(center_eyes):
+def calibration(human_info, real_sense_calibration = True):
+    center_eyes = human_info.center_eyes[-1].copy()
+    calib_parameter = [0.9245, -0.004, 0.0584, -0.0242, 0.9475, -0.0083, 0.0208, 0.1013, 0.8956, -32.2596, 121.3725, 26.666, 0.008]
+    # y = 240 - y
+    # x = x - 320
     # for D435
-    camera_horizontal_angle = 85.2
-    camera_vertical_angle = 58
+    camera_horizontal_angle = 87 # RGB = 60
+    camera_vertical_angle = 58 # RGB = 42
 
     i_width = 640
     i_height = 480
     
     # before calibration
-    eye_x = (i_width/2) - center_eyes[0]
+    eye_x = center_eyes[0] - (i_width/2)
     eye_y = (i_height/2) - center_eyes[1]
     eye_z = center_eyes[2]
 
     detected_x_angle = (camera_horizontal_angle / 2) * (eye_x / (i_width/2))
     detected_y_angle = (camera_vertical_angle / 2) * (eye_y / (i_height/2))
 
-    new_x = eye_z * math.sin(math.radians(detected_x_angle)) * 7 / 9
+    new_x = eye_z * math.sin(math.radians(detected_x_angle))
     new_y = eye_z * math.sin(math.radians(detected_y_angle))
-    y_offset = eye_z * math.sin(math.radians(camera_vertical_angle/2))
+    new_z = eye_z
 
-    return new_x, new_y + 240, eye_z
+    new_x, new_y, new_z = new_x * -1.0, new_y * 1.0, new_z * 1.0
+    new_x = calib_parameter[0] * new_x + calib_parameter[3] * new_y + calib_parameter[6] * new_z + (calib_parameter[9])
+    new_y = calib_parameter[1] * new_x + calib_parameter[4] * new_y + calib_parameter[7] * new_z + (calib_parameter[10])
+    new_z = calib_parameter[2] * new_x + calib_parameter[5] * new_y + calib_parameter[8] * new_z + (calib_parameter[11])
 
-def main_user_drawing(frame, face_box_per_man, center_face_per_man, main_user_index):
+    human_info.calib_center_eyes = [new_x, new_y, new_z]
+
+    # Old calib
+    #new_x = eye_z * math.sin(math.radians(detected_x_angle)) * 7 / 9
+    #new_y = eye_z * math.sin(math.radians(detected_y_angle))
+    #y_offset = eye_z * math.sin(math.radians(camera_vertical_angle/2))
+
+def main_user_drawing(frame, human_infos, main_user_index):
     height, width = frame.shape[:2]
-    for index, face in enumerate(face_box_per_man):
+    #main_user_index = random.randint(0, len(face_box_per_man)-1) # For random main user visualization
+    for index, human_info in enumerate(human_infos):
         if index == main_user_index:
-            cv2.line(frame, (int(width/2), height-1), (center_face_per_man[index][0], center_face_per_man[index][1]), (0, 255, 0), 3)
-            cv2.rectangle(frame, (int(face_box_per_man[index][0][0]), int(face_box_per_man[index][0][1])), (int(face_box_per_man[index][0][2]), int(face_box_per_man[index][0][3])), (0,255,0), 2, cv2.LINE_AA)
-            cv2.putText(frame, 'M', (int((face[0][0] + face[0][2])/2), int(face[0][1])), 1, 2, (0, 255, 0), 2)
+            cv2.line(frame, (int(width/2), height-1), (int(human_info.center_eyes[-1][0]), int(human_info.center_eyes[-1][1])), (0, 255, 0), 3)
+            cv2.rectangle(frame, (int(human_info.face_box[0][0]), int(human_info.face_box[0][1])), (int(human_info.face_box[0][2]), int(human_info.face_box[0][3])), (0,255,0), 2, cv2.LINE_AA)
+            cv2.putText(frame, 'M', (int((human_info.face_box[0][0] + human_info.face_box[0][2])/2), int(human_info.face_box[0][1])), 1, 2, (0, 255, 0), 2)
         else:
-            cv2.line(frame, (int(width/2), height-1), (center_face_per_man[index][0], center_face_per_man[index][1]), (255, 0, 0), 1)
-            cv2.rectangle(frame, (int(face_box_per_man[index][0][0]), int(face_box_per_man[index][0][1])), (int(face_box_per_man[index][0][2]), int(face_box_per_man[index][0][3])), (255,0,0), 2, cv2.LINE_AA)
+            cv2.line(frame, (int(width/2), height-1), (int(human_info.center_eyes[-1][0]), int(human_info.center_eyes[-1][1])), (255, 0, 0), 1)
+            cv2.rectangle(frame, (int(human_info.face_box[0][0]), int(human_info.face_box[0][1])), (int(human_info.face_box[0][2]), int(human_info.face_box[0][3])), (255,0,0), 2, cv2.LINE_AA)
     return frame
 
-def main_user_classification(frame, face_box_per_man, center_face_per_man, head_pose_per_man):
-    man_score = [4000] * len(center_face_per_man)
-    for index, center_face in enumerate(center_face_per_man):
-        man_score[index] -= center_face_per_man[index][2]
+def main_user_classification(frame, human_infos):
+    man_score = [4000] * len(human_infos)
+    for index, human_info in enumerate(human_infos):
+        man_score[index] -= human_info.center_eyes[-1][2]
+        if abs(human_info.head_poses[-1][0]) > 30: # if yaw value of the man is over than 30 or -30, then we think that the man is not looking the display.
+            man_score[index] = 0
+    max_val = max(man_score)
+    main_user_index = man_score.index(max_val)
+    draw_frame = main_user_drawing(frame.copy(), human_infos, main_user_index)
+    return main_user_index, draw_frame
+    
+def realsense_initialization():
+    align_to = rs.stream.color
+    align = rs.align(align_to)
+    pipeline = rs.pipeline()
+    # Configure streams
+    config = rs.config()
+    config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+    config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 
-    if len(center_face_per_man) != len(head_pose_per_man): 
-        max_val = max(man_score)
-        main_user_index = man_score.index(max_val)
-        frame = main_user_drawing(frame, face_box_per_man, center_face_per_man, main_user_index)
-        return main_user_index, frame
-        
+    # Start streaming
+    pipeline.start(config)
+    return pipeline, align
+
+def video_loader_initialization(path):
+    files = os.listdir(path)
+    rgb_videos = []
+    depth_videos = []
+    for file in files:
+        if 'rgb' in file:
+            rgb_videos.append(file)
+        elif 'depth' in file:
+            depth_videos.append(file)
+    rgb_videos.sort()
+    depth_videos.sort()
+    rgb_caps = []
+    depth_caps = []
+    for rgb_video, depth_video in zip(rgb_videos, depth_videos):
+        rgb_cap = cv2.VideoCapture(os.path.join(path, rgb_video))
+        depth_cap = cv2.VideoCapture(os.path.join(path, depth_video))
+        rgb_caps.append(rgb_cap)
+        depth_caps.append(depth_cap)
+    return rgb_caps, depth_caps, len(rgb_caps)
+
+def load_mode(base_path):
+    communication_file = open(os.path.join(base_path, 'communication.txt'), 'r')
+    mode = communication_file.readline().strip()
+    communication_file.close()
+    return mode
+
+def get_input(pipeline=None, align=None, rgb_cap=None, depth_cap=None, video_path=None):
+    # Get input
+    if not video_path:
+        frames = pipeline.wait_for_frames()
+        align_frames = align.process(frames)
+        frame = align_frames.get_color_frame()
+        depth = align_frames.get_depth_frame()
+        depth = np.array(depth.get_data())
+        frame = np.array(frame.get_data())
     else:
-        for index, head_pose in enumerate(head_pose_per_man):
-            if abs(head_pose[0]) > 30: # if yaw value of the man is over than 30 or -30, then we think that the man is not looking the display.
-                man_score[index] = 0
-        max_val = max(man_score)
-        main_user_index = man_score.index(max_val)
-        frame = main_user_drawing(frame, face_box_per_man, center_face_per_man, main_user_index)
-        return main_user_index, frame
-    
-def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 'save.avi', save_path = 'data'):
-    base_path = os.getcwd()
+        ret, frame = rgb_cap.read()
+        ret, depth = depth_cap.read()
+    return frame, depth
+
+def flag_initialization(human_info):
+    human_info.face_detection_flag = False
+    human_info.head_pose_estimation_flag = False
+    human_info.body_pose_estimation_flag = False
+    human_info.gaze_estimation_flag = False
+
+def face_detection(frame, depth, face_mesh, human_infos = None):
+    height, width = frame.shape[:2]
+    bgr_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    face_results = face_mesh.process(bgr_image)
+    if face_results.multi_face_landmarks:
+        if not human_infos:
+            human_infos = []
+        for index, face_landmarks in enumerate(face_results.multi_face_landmarks):
+            if index >= len(human_infos):
+                human_info = HumanInfo()
+            else:
+                human_info = human_infos[index]
+                flag_initialization(human_info)
+            face_boxes, left_eye_box, right_eye_box = head_pose_estimatior.box_extraction(
+                face_landmarks=face_landmarks,
+                width = width,
+                height = height)
+            face_box = np.array(face_boxes)
+            left_eye_box = np.array(left_eye_box)
+            right_eye_box = np.array(right_eye_box)
+            human_info.face_box = face_box # face box is not used for action recognition. Thus, face_box is not list.
+            human_info.left_eye_box = left_eye_box
+            human_info.right_eye_box = right_eye_box
+
+            center_eyes_x = (left_eye_box[0][0] + left_eye_box[0][2]) / 2
+            center_eyes_y = (left_eye_box[0][1] + left_eye_box[0][3]) / 2
+            center_eyes_z = depth[int(center_eyes_y), int(center_eyes_x)]
+            human_info._put_data([center_eyes_x, center_eyes_y, center_eyes_z], 'center_eyes')
+            if index >= len(human_infos):
+                human_infos.append(human_info)
+    if face_results.multi_face_landmarks:
+        return human_infos, len(face_results.multi_face_landmarks)
+    else:
+        return human_infos, 0
+
+def head_pose_estimation(frame, human_infos, fa, handler):
+    feed = frame.copy()
+    # Estimate head pose
+    if head_pose_estimation:
+        for index, human_info in enumerate(human_infos):
+            face_box  = human_info.face_box
+            for results in fa.get_landmarks(feed, face_box):
+                pitch, yaw, roll = handler(frame, results, color=(125, 125, 125))
+                human_info._put_data([yaw, pitch, roll], 'head_poses')
+    return human_infos
+
+def gaze_estimation(frame_copy, frame, human_info, visualization):
+    frame, eyes = estimate_gaze_from_face_image(frame_copy, frame, human_info, visualization)
+    left_eye, right_eye = eyes
+    left_gaze = left_eye.gaze.copy()
+    left_gaze[1] = -left_gaze[1]
+    right_gaze = right_eye.gaze.copy()
+    gazes = [left_gaze, right_gaze]
+
+    human_info._put_data([gazes[0][0], gazes[0][1], gazes[1][0], gazes[1][1]], 'eye_poses')
+    human_info.left_eye_landmark = left_eye
+    human_info.right_eye_landmark = right_eye
+    human_info.left_eye_gaze = left_gaze
+    human_info.right_eye_gaze = right_gaze
+    return frame
+
+def body_pose_estimation(pose, frame, draw_frame, depth, human_info):
+    height, width = frame.shape[:2]
+    cv2.imshow('test', frame)
+    cv2.waitKey(1)
+    results = pose.process(frame)
+    if results.pose_landmarks:
+        body_landmarks= results.pose_landmarks
+        body_landmarks = np.array([[lmk.x * width, lmk.y * height, lmk.z * width]
+            for lmk in body_landmarks.landmark], dtype=np.float32)
+
+        left_shoulder, right_shoulder, center_stomach, center_mouth, left_x_offset, left_y_offset, right_x_offset, right_y_offset, center_eye3 = body_pose_estimatior.body_keypoint_extractor(body_landmarks, landmark_names, depth, width, height)
+        frame = visualization_tool.draw_body_keypoints(draw_frame, [left_shoulder, right_shoulder, center_stomach, center_mouth, center_eye3])
+        upper_body_yaw, upper_body_pitch, upper_body_roll = body_pose_estimatior.upside_body_pose_calculator(left_shoulder, right_shoulder, center_stomach)
+        upper_body_yaw = upper_body_yaw * 180 / math.pi
+        upper_body_pitch = upper_body_pitch * 180 / math.pi
+        upper_body_roll = upper_body_roll * 180 / math.pi
+
+        human_info._put_data(center_stomach, 'center_stomachs')
+        human_info._put_data(center_mouth, 'center_mouths')
+        human_info._put_data(left_shoulder, 'left_shoulders')
+        human_info._put_data(right_shoulder, 'right_shoulders')
+        human_info._put_data([upper_body_yaw, upper_body_pitch, upper_body_roll], 'body_poses')
+    return draw_frame
+
+def visualization(frame, depth, human_info):
+    height, width = frame.shape[:2]
+    # apply colormap to depthmap
+    depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth, alpha=0.03), cv2.COLORMAP_JET)
+
+    # Visualize head pose
+    if human_info.head_pose_estimation_flag:
+        frame = draw_axis(frame, human_info.head_poses[-1][0], human_info.head_poses[-1][1], human_info.head_poses[-1][2], 
+                          [int((human_info.face_box[0][0] + human_info.face_box[0][2])/2), int(human_info.face_box[0][1] - 30)])
+
+    # Visualize body pose
+    if human_info.body_pose_estimation_flag:
+        frame = draw_axis(frame, human_info.body_poses[-1][0], human_info.body_poses[-1][1], human_info.body_poses[-1][2], 
+                          [int((human_info.left_shoulders[-1][0] + human_info.right_shoulders[-1][0])/2), int(human_info.left_shoulders[-1][1])], 
+                          color1=(255,255,0), color2=(255,0,255), color3=(0,255,255))
+
+    # Visualize eye pose
+    if human_info.gaze_estimation_flag:
+        for i, ep in enumerate([human_info.left_eye_landmark, human_info.right_eye_landmark]):
+            for (x, y) in ep.landmarks[16:33]:
+                color = (0, 255, 0)
+                if ep.eye_sample.is_left:
+                    color = (255, 0, 0)
+                cv2.circle(frame,(int(round(x)), int(round(y))), 1, color, -1, lineType=cv2.LINE_AA)
+            gaze = [human_info.left_eye_gaze, human_info.right_eye_gaze][i]
+            length = 60.0
+            draw_gaze(frame, ep.landmarks[-2], gaze, length=length, thickness=2)
+
+    # Visualize the values of each poses
+    if precise_value_visualization:
+        width = int(width * 1.5)
+        zero_array = np.zeros((height, width, 3), dtype=np.uint8)
+        if human_info.body_pose_estimation_flag:
+            center_shoulder = (human_info.left_shoulders[-1] + human_info.right_shoulders[-1]) / 2
+            zero_array= visualization_tool.draw_body_information(zero_array, width, height, round(center_shoulder[0], 2), round(center_shoulder[1], 2), round(center_shoulder[2], 2), 
+                                                                 round(human_info.body_poses[-1][0], 2), round(human_info.body_poses[-1][1], 2), round(human_info.body_poses[-1][2], 2))
+        if human_info.head_pose_estimation_flag:
+            zero_array = visualization_tool.draw_face_information(zero_array, width, height, round(human_info.center_eyes[-1][0], 2), round(human_info.center_eyes[-1][1]),
+                                                                  round(human_info.center_eyes[-1][2]), round(human_info.head_poses[-1][0], 2), round(human_info.head_poses[-1][1], 2),
+                                                                  round(human_info.head_poses[-1][2], 2))
+
+        if human_info.gaze_estimation_flag:
+            zero_array = visualization_tool.draw_gaze_information(zero_array,width, height, round(human_info.center_eyes[-1][0], 2), round(human_info.center_eyes[-1][1], 2),
+                                                                  round(human_info.center_eyes[-1][2], 2), [human_info.left_eye_gaze, human_info.right_eye_gaze])
+        stacked_frame = np.concatenate([frame, zero_array], axis=1)
+        return stacked_frame
+    else:
+        return None
+
+def action_recognition(frame, draw_frame, human_info, fps):
+    fps = int(fps)
+    if human_info.body_pose_estimation_flag and human_info.head_pose_estimation_flag and fps>0:
+        center_eyes = np.array(human_info.center_eyes[-2*fps:])
+        center_mouths = np.array(human_info.center_mouths[-2*fps:])
+        left_shoulders = np.array(human_info.left_shoulders[-2*fps:])
+        right_shoulders = np.array(human_info.right_shoulders[-2*fps:])
+        center_stomachs = np.array(human_info.center_stomachs[-2*fps:])
+        head_poses = np.array(human_info.head_poses[-2*fps:])
+        network_input = np.array([center_eyes, center_mouths, left_shoulders, right_shoulders, center_stomachs, head_poses])
+
+        # 총 25개의 features
+        network_input = preprocessing.data_preprocessing(network_input, fps)
+        network_input = np.expand_dims(np.array(network_input),axis=0)
+        human_state = inference(network_input)
+        human_info.human_state = human_state
+        draw_frame = cv2.flip(draw_frame, 1)
+        cv2.putText(draw_frame, human_state, (0, 50), 1, 3, (0, 0, 255), 3)
+        return draw_frame
+    else:
+        print("The body and head pose are not estimated normally. Please check the state of the human.")
+        return frame
+
+def networking(human_info, mode, base_path):
+    communication_write = open(os.path.join(base_path, 'communication.txt'), 'r+')
+    communication_write.write(mode)
+    communication_write.write(str(round(human_info.center_eyes[-1][0])).zfill(3) + ' ' + str(round(human_info.center_eyes[-1][1]+20)).zfill(3)
+                              + ' ' + str(round(human_info.center_eyes[-1][2])).zfill(3) + '\n')
+    communication_write.write(str(round(human_info.head_poses[-1][1])).zfill(3) + ' ' + str(round(human_info.head_poses[-1][0])).zfill(3)
+                              + ' ' + str(round(human_info.head_poses[-1][2])).zfill(3) + '\n')
+    communication_write.write(human_info.human_state+'\n')
+    communication_write.close()
+
+
+def main(video_folder_path=None):
+    base_path = os.path.dirname(os.path.abspath(__file__))
     fps = 20
-    
-    # Initialize the blank lists
-    head_poses = []
-    body_poses = []
-    eye_poses = []
-    center_eyes = []
-    center_mouths = []
-    left_shoulders = []
-    right_shoulders = []
-    center_stomachs = []
-    human_state = None
-    yaw, pitch, roll = -999, -999, -999
-    for i in range(200):
-        head_poses = fill_the_blank(head_poses)
-        body_poses = fill_the_blank(body_poses)
-        eye_poses = fill_the_blank(eye_poses)
-        center_eyes = fill_the_blank(center_eyes)
-        center_mouths = fill_the_blank(center_mouths)
-        left_shoulders = fill_the_blank(left_shoulders)
-        right_shoulders = fill_the_blank(right_shoulders)
-        center_stomachs = fill_the_blank(center_stomachs)
-    
-    
+    iteration = 0
+    human_infos = None
+
     # Initialize face detection module
-    fa = service.DepthFacialLandmarks("C:/Users/user/Desktop/version/human_pose_estimation/human_pose/code/head_pose_estimation_module/weights/sparse_face.tflite")
+    fa = service.DepthFacialLandmarks(os.path.join(base_path, "head_pose_estimation_module/weights/sparse_face.tflite"))
     print('Face detection module is initialized')
 
     # Initialize head pose estimation module
     handler = getattr(service, 'pose')
     print('Head pose estimation module is initialized')
 
-    if use_realsense:
-        align_to = rs.stream.color
-        align = rs.align(align_to)
-
+    if not video_folder_path:
+        pipeline, align = realsense_initialization()
+    # Video
+    else:
+        rgb_caps, depth_caps, total_video_num = video_loader_initialization(video_folder_path)
+        current_video_index = 0
+        rgb_cap, depth_cap = rgb_caps[current_video_index], depth_caps[current_video_index]
     # Define pose estimation & face detection thresholds
     with mp_pose.Pose(
         min_detection_confidence=0.5,
@@ -188,343 +387,85 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
         with mp_face_mesh.FaceMesh(
             max_num_faces=3,
             min_detection_confidence=0.5) as face_mesh:
-            print('Camera settings is started')
-            # Create a context object. This object owns the handles to all connected realsense devices
-            if use_realsense:
-                pipeline = rs.pipeline()
-                # Configure streams
-                config = rs.config()
-                config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-                config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
-
-                # Start streaming
-                pipeline.start(config)
-
-            elif use_video:
-                rgb_cap = cv2.VideoCapture(rgb_video_path)
-                depth_cap = cv2.VideoCapture(depth_video_path)
-
-            else: # RGB camera
-                cap = cv2.VideoCapture(0)
-
-            if result_record:
-                fps = rgb_cap.get(cv2.CAP_PROP_FPS) # 카메라에 따라 값이 정상적, 비정상적
-                # fourcc 값 받아오기, *는 문자를 풀어쓰는 방식, *'DIVX' == 'D', 'I', 'V', 'X'
-                fourcc = cv2.VideoWriter_fourcc(*'DIVX')
-                rgb_video_name = rgb_video_path.split('/')[-1]
-                rgb_video_name = rgb_video_name[0:len(rgb_video_name)-4] + '.avi'
-                result_out = cv2.VideoWriter(
-                    os.path.join(save_path, rgb_video_name)
-                    , fourcc, fps, (1600, 480))
             print("Initialization step is done. Please turn on the super multiview renderer")
 
             while True:
-                # Communication with renderer
-                try:
-                    communication_read = open('./communication.txt', 'r')
-                except:
-                    communication_read = open('./code/communication.txt', 'r')
-                line = ['0', '0 0 0', '0 0 0', 'standard'] # tracking_mode / eye_position / head_rotation / human action
-                for i in range(4): # mode / eye_position / head_rotation / action
-                    line[i] = communication_read.readline()
-                if line[0].strip() == '0': # no tracking is needed
-                    communication_read.close()
-                    continue
-                elif line[0].strip() == '1': # only head tracking mode
-                    head_pose_estimation = False
-                    body_pose_estimation = False
-                elif line[0].strip() == '2': # head tracking + head pose estimation mode
-                    head_pose_estimation = True
-                    body_pose_estimation = False
-                elif line[0].strip() == '3': # head tracking + head pose estimation + action recognition
-                    head_pose_estimation = True
-                    body_pose_estimation = True
-                else:
-                    print('Undefined mode is occurred. Please modify the line 1 in the communication.txt file')
-                communication_read.close()
+                # Load mode (0: No tracking / 1: Eye tracking / 2: Eye tracking + Head pose estimation / 3: Eye tracking + Head pose estimation + Action recongition)
+                mode = load_mode(base_path=base_path) # mode
+                if mode == 0:
+                    break
 
-                start_time = time.time()
-                face_box_per_man = []
-                head_pose_per_man = []
-                body_pose_per_man = []
-                eye_pose_per_man = []
-                depth_per_man = []
-                center_face_per_man = []
-                left_eye_box_per_man = []
-                right_eye_box_per_man = []
-                
                 # Get input
-                if use_realsense:
-                    frames = pipeline.wait_for_frames()
-                    align_frames = align.process(frames)
-                    frame = align_frames.get_color_frame()
-                    depth = align_frames.get_depth_frame()
-                    if not depth or not frame:
-                        print('Preparing camera')
-                        continue
-                    depth = np.array(depth.get_data())
-                    frame = np.array(frame.get_data())
+                start_time = time.time()
+                if not video_folder_path:
+                    frame, depth = get_input(pipeline=pipeline, align=align, video_path=video_folder_path)
+                else: # Load next video automatically.
+                    (rgb_ret, frame), (depth_ret, depth) = rgb_cap.read(), depth_cap.read()
+                    if depth_ret:
+                        depth = cv2.cvtColor(depth, cv2.COLOR_RGB2GRAY)
+                    else:
+                        if current_video_index + 1 < total_video_num:
+                            current_video_index += 1
+                            rgb_cap, depth_cap = rgb_caps[current_video_index], depth_caps[current_video_index]
+                            continue
+                        else:
+                            break
 
-                elif use_video:
-                    ret, frame = rgb_cap.read()
-                    ret, depth = depth_cap.read()
-                    if frame is None:
-                        break
-                else:
-                    ret, frame = cap.read()
-                    if frame is None:
-                        break
-                    depth = np.zeros((frame.shape[0], frame.shape[1]))
-
-                cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
-                frame_copy = frame.copy()
-                frame_copy = cv2.flip(frame_copy, 1)
-                cv2.imshow('frame', frame_copy)
-                cv2.waitKey(1)
+                if not frame.any() or not depth.any():
+                    continue
                 if depth.shape != frame.shape:
                     frame = cv2.resize(frame, dsize=(depth.shape[1], depth.shape[0]), interpolation=cv2.INTER_AREA)
 
-                # frame shape for return normalized bounding box info
+                # Get frame information
                 height, width = frame.shape[:2]
+                
+                # Input visualization
+                frame_copy = frame.copy()
+                cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
+                cv2.imshow('frame', frame_copy)
+                cv2.waitKey(1)
 
                 # Media pipe face detection
-                bgr_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                results = face_mesh.process(bgr_image)
-                if results.multi_face_landmarks:
-                    for index, face_landmarks in enumerate(results.multi_face_landmarks):
-                        face_boxes, left_eye_boxes, right_eye_boxes = head_pose_estimatior.box_extraction(
-                            face_landmarks=face_landmarks,
-                            width = width,
-                            height = height)
-                        face_boxes = np.array(face_boxes)
-                        face_box_per_man.append(face_boxes)
+                human_infos, face_num = face_detection(frame, depth, face_mesh, human_infos)
 
-                        center_face_x = int((face_boxes[0][0] + face_boxes[0][2]) / 2)
-                        center_face_y = int(face_boxes[0][3])
-                        center_depth_of_face = depth[center_face_y, center_face_x]
-                        center_face_per_man.append((center_face_x, center_face_y, center_depth_of_face))
-                        
-                        left_eye_boxes = np.array(left_eye_boxes)
-                        right_eye_boxes = np.array(right_eye_boxes)
-                        left_eye_box_per_man.append(left_eye_boxes)
-                        right_eye_box_per_man.append(right_eye_boxes)
-                        center_eye_x = (left_eye_boxes[0][0] + left_eye_boxes[0][2]) / 2
-                        center_eye_y = (left_eye_boxes[0][1] + left_eye_boxes[0][3]) / 2
-                        if len(depth.shape) > 2:
-                            center_eye_z = depth[max(0, min(479, int(center_eye_y))), max(0, min(639, int(center_eye_x))), 0]
-                        else:
-                            center_eye_z = depth[max(0, min(479, int(center_eye_y))), max(0, min(639, int(center_eye_x)))]
-                        center_eye = [center_eye_x, center_eye_y, center_eye_z, 0]
-                        center_eyes.append(center_eye)
-                        #cv2.rectangle(frame, (int(left_eye_boxes[0][0]), int(left_eye_boxes[0][1])), (int(left_eye_boxes[0][2]), int(left_eye_boxes[0][3])), (0, 0, 255), 2, cv2.LINE_AA)
-
-
-                    # raw copy for reconstruction
-                    feed = frame.copy()
-                    # Estimate head pose
-                    if head_pose_estimation:
-                        for face_boxes in face_box_per_man:
-                            for results in fa.get_landmarks(feed, face_boxes):
-                                pitch, yaw, roll = handler(frame, results, color)
-                                head_pose_per_man.append([yaw, pitch, roll, 0])
+                if face_num:
+                    # Head pose estimation
+                    human_infos = head_pose_estimation(frame, human_infos, fa, handler)
                         
                     # Main user classification
-                    main_user_index, frame = main_user_classification(frame, face_box_per_man, center_face_per_man, head_pose_per_man)
-                    head_poses.append(head_pose_per_man[main_user_index])
+                    main_user_index, draw_frame = main_user_classification(frame, human_infos)
+                    human_infos = [human_infos[main_user_index]]
 
-                    # Estimate gaze
-                    if gaze_estimation:
-                        frame, eyes = estimate_gaze_from_face_image(feed, frame, face_box_per_man[main_user_index], left_eye_box_per_man[main_user_index], right_eye_box_per_man[main_user_index], visualization)
-                        left_eye, right_eye = eyes
-                        left_gaze = left_eye.gaze.copy()
-                        left_gaze[1] = -left_gaze[1]
-                        right_gaze = right_eye.gaze.copy()
-                        gazes = [left_gaze, right_gaze]
-                        eye_poses.append([gazes[0][0], gazes[0][1], gazes[1][0], gazes[1][1]])
+                    # Gaze estimation
+                    #frame = gaze_estimation(frame_copy, frame, human_infos[main_user_index], visualization)
 
-                    if body_pose_estimation and len(face_box_per_man) == 1:
-                        # Estimate body pose
-                        results = pose.process(frame)
-                        if results.pose_landmarks:
-                            body_landmarks= results.pose_landmarks
-                            body_landmarks = np.array([[lmk.x * width, lmk.y * height, lmk.z * width]
-                                for lmk in body_landmarks.landmark], dtype=np.float32)
-                            
-                            if use_video is False and use_realsense is False: # if there is a depth value
-                                normal_state = True
-                            else:
-                                normal_state = False
+                    # Body pose estimation
+                    draw_frame = body_pose_estimation(pose, frame, draw_frame, depth, human_infos[0])
 
-                            left_shoulder, right_shoulder, center_stomach, center_mouth, left_x_offset, left_y_offset, right_x_offset, right_y_offset, center_eye3 = body_pose_estimatior.body_keypoint_extractor(body_landmarks, landmark_names, depth, width, height, normal_camera=normal_state, use_realsense = use_realsense)
-                            frame = visualization_tool.draw_body_keypoints(frame, [left_shoulder, right_shoulder, center_stomach, center_mouth, center_eye3])
-                            upper_body_yaw, upper_body_pitch, upper_body_roll = body_pose_estimatior.upside_body_pose_calculator(left_shoulder, right_shoulder, center_stomach)
+                    # Visualization
+                    #stacked_frame = visualization(frame, depth, human_infos[main_user_index])
+                    
+                    # Action recognition
+                    draw_frame = action_recognition(frame, draw_frame, human_infos[0], fps)
 
-                            center_stomachs.append(np.append(center_stomach, [0], 0))
-                            center_mouths.append(np.append(center_mouth, [0], 0))
-                            left_shoulders.append(np.append(left_shoulder, [0], 0))
-                            right_shoulders.append(np.append(right_shoulder, [0], 0))
+                    # Calibration
+                    calibration(human_infos[0])
 
-                            upper_body_yaw = upper_body_yaw * 180 / math.pi
-                            upper_body_pitch = upper_body_pitch * 180 / math.pi
-                            upper_body_roll = upper_body_roll * 180 / math.pi
-
-
-                            body_poses.append([upper_body_yaw, upper_body_pitch, upper_body_roll])
-
-                else: # if no face is detected
-                    head_poses = fill_the_blank(head_poses)
-                    body_poses = fill_the_blank(body_poses)
-                    eye_poses = fill_the_blank(eye_poses)
-                    center_eyes = fill_the_blank(center_eyes)
-                    center_mouths = fill_the_blank(center_mouths)
-                    left_shoulders = fill_the_blank(left_shoulders)
-                    right_shoulders = fill_the_blank(right_shoulders)
-                    center_stomachs = fill_the_blank(center_stomachs)
-
-                # Visualization
-                if visualization:
-                    # apply colormap to depthmap
-                    depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth, alpha=0.03), cv2.COLORMAP_JET)
-
-                    if head_pose_estimation and yaw > -999:
-                        for index, face_boxes in enumerate(face_box_per_man):
-                            yaw, pitch, roll = head_pose_per_man[index][0], head_pose_per_man[index][1], head_pose_per_man[index][2]
-                            frame = draw_axis(frame, yaw, pitch, roll, [int((face_boxes[0][0] + face_boxes[0][2])/2), int(face_boxes[0][1] - 30)])
-                    try:
-                        if body_pose_estimation and results.pose_landmarks:
-                            cv2.circle(depth_colormap, (int(left_shoulder[0]-left_y_offset), int(left_shoulder[1]+left_x_offset)), 3, (0, 255, 0), 3)
-                            cv2.circle(depth_colormap, (int(right_shoulder[0]+right_y_offset), int(right_shoulder[1]+right_x_offset)), 3, (0, 255, 0), 3)
-                            cv2.imshow('depth', depth_colormap)
-                            #mp_drawing.draw_landmarks(
-                            #    frame,
-                            #    results.pose_landmarks,
-                            #    mp_pose.POSE_CONNECTIONS,
-                            #    landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style())
-                            if left_shoulder is not None and right_shoulder is not None:
-                                frame = draw_axis(frame, upper_body_yaw, upper_body_pitch, upper_body_roll, [int((left_shoulder[0] + right_shoulder[0])/2), int(left_shoulder[1])],
-                                color1=(255,255,0), color2=(255,0,255), color3=(0,255,255))
-
-
-                        if gaze_estimation:
-                            for i, ep in enumerate([left_eye, right_eye]):
-                                for (x, y) in ep.landmarks[16:33]:
-                                    color = (0, 255, 0)
-                                    if ep.eye_sample.is_left:
-                                        color = (255, 0, 0)
-                                    cv2.circle(frame,(int(round(x)), int(round(y))), 1, color, -1, lineType=cv2.LINE_AA)
-                                gaze = gazes[i]
-                                length = 60.0
-                                draw_gaze(frame, ep.landmarks[-2], gaze, length=length, thickness=2)
-
-                        if text_visualization:
-                            width = int(width * 1.5)
-                            zero_array = np.zeros((height, width, 3), dtype=np.uint8)
-                            if body_pose_estimation and results.pose_landmarks:
-                                center_shoulder = (left_shoulder + right_shoulder) / 2
-                                zero_array= visualization_tool.draw_body_information(zero_array, width, height, round(center_shoulder[0], 2), round(center_shoulder[1], 2), round(center_shoulder[2], 2), 
-                                round(upper_body_yaw, 2), round(upper_body_pitch, 2), round(upper_body_roll, 2))
-                            if head_pose_estimation and yaw:
-                                zero_array = visualization_tool.draw_face_information(zero_array, width, height, round(center_face_per_man[main_user_index][0], 2), round(center_face_per_man[main_user_index][1], 2), round(center_face_per_man[main_user_index][2], 2), round(yaw, 2)
-                                , round(pitch, 2), round(roll, 2))
-                            if gaze_estimation and gazes is not None:
-                                zero_array = visualization_tool.draw_gaze_information(zero_array,width, height, round(center_eye_x, 2), round(center_eye_y, 2), round(center_eye_z, 2), gazes)
-                            stacked_frame = np.concatenate([frame, zero_array], axis=1)
-                    except:
-                        print('no posture is detected')
-
-                if action_recognition:
-                    rounded_fps = round(fps)
-                    center_eyes = center_eyes[len(center_eyes)-200: len(center_eyes)]
-                    center_mouths = center_mouths[len(center_mouths)-200: len(center_mouths)]
-                    left_shoulders = left_shoulders[len(left_shoulders)-200: len(left_shoulders)]
-                    right_shoulders = right_shoulders[len(right_shoulders) - 200 : len(right_shoulders)]
-                    center_stomachs = center_stomachs[len(center_stomachs) - 200 : len(center_stomachs)]
-                    head_poses = head_poses[len(head_poses) - 200 : len(head_poses)]
-                    body_poses = body_poses[len(body_poses) - 200 : len(body_poses)]
-                    eye_poses = eye_poses[len(eye_poses) - 200 : len(eye_poses)] 
-
-                    if head_pose_estimation and body_pose_estimation:
-                        if len(head_poses) > rounded_fps*2:
-                            temp_center_eyes = np.array(center_eyes[len(center_eyes) - rounded_fps*2:len(center_eyes)])
-                            temp_center_mouths = np.array(center_mouths[len(center_mouths) - 2*rounded_fps: len(center_mouths)])
-                            temp_left_shoulders = np.array(left_shoulders[len(left_shoulders) - 2*rounded_fps: len(left_shoulders)])
-                            temp_right_shoulders = np.array(right_shoulders[len(right_shoulders) - rounded_fps*2 : len(right_shoulders)])
-                            temp_center_stomachs = np.array(center_stomachs[len(center_stomachs) - 2*rounded_fps : len(center_stomachs)])
-                            temp_head_poses = head_poses[len(head_poses) - 2*rounded_fps : len(head_poses)]
-
-                        if len(temp_head_poses) == rounded_fps*2 and rounded_fps>5:
-                            output = [temp_center_eyes, temp_center_mouths, temp_left_shoulders, temp_right_shoulders, temp_center_stomachs]
-                            if head_pose_estimation:
-                                head_poses_np = np.array(temp_head_poses)
-                                output.append(head_poses_np)
-
-                            # 총 25개의 features
-                            output = np.array(output)
-                            while output.shape[1] < rounded_fps*2:
-                                output = np.append(output, output[:, -1, :].reshape(output.shape[0], 1, output.shape[2]), axis=1)
-                            data = preprocessing.data_preprocessing(output, rounded_fps)
-                            inputs = np.expand_dims(np.array(data),axis=0)
-                            human_state = inference(inputs)
-                            frame = cv2.flip(frame, 1)
-                            cv2.putText(frame, human_state, (0, 50), 1, 3, (0, 0, 255), 3)
-                    if zmq_enable:
-                        if len(depth_per_man) > 0:
-                            min_val = min(depth_per_man)
-                            min_index = depth_per_man.index(min_val)
-                            if min_index < len(head_pose_per_man):
-                                main_center_eye = center_face_per_man[min_index]
-                                main_head_pose = head_pose_per_man[min_index]
-                                eye_x, eye_y, eye_z = calibration([main_center_eye[0], main_center_eye[1], min_val])
-                                communication_write = open('communication.txt', 'r+')
-                                communication_write.write(line[0])
-                                communication_write.write(str(round(eye_x)).zfill(3) + ' ' + str(round(eye_y+20)).zfill(3) + ' ' + str(round(eye_z)).zfill(3) + '\n')
-                                communication_write.write(str(round(main_head_pose[1])).zfill(3) + ' ' + str(round(main_head_pose[0])).zfill(3) + ' ' + str(round(main_head_pose[2])).zfill(3) + '\n' if head_pose_estimation else '0 0 0\n')
-                                communication_write.write(human_state+'\n' if human_state is not None else 'standard\n')
-                                communication_write.close()
+                    # Networking with renderer
+                    networking(human_infos[0], mode, base_path)
 
                 cv2.namedWindow('MediaPipe Pose1', cv2.WINDOW_NORMAL)
-                cv2.imshow('MediaPipe Pose1', frame)
-                #cv2.imshow('MediaPipe Pose2', stacked_frame)
-                if result_record:
-                    result_out.write(stacked_frame.copy())
+                cv2.imshow('MediaPipe Pose1', draw_frame)
 
-                    # Check the FPS
                 fps = 1 / (time.time() - start_time)
                 #print(fps)
                 pressed_key = cv2.waitKey(1)
                 if pressed_key == 27:
                     break
 
-    if annotation:
-        output = [center_eyes, center_mouths, left_shoulders, right_shoulders, center_stomachs]
-        if head_pose_estimation:
-            head_poses = np.array(head_poses)
-            output.append(head_poses)
-        if body_pose_estimation:
-            body_poses = np.array(body_poses)
-            output.append(body_poses)
-        if gaze_estimation:
-            gaze_poses = np.array(gaze_poses)
-            output.append(gaze_poses)
-
-        # 총 25개의 features
-        output = np.array(output)
-        while output.shape[1] < 60:
-            output = np.append(output, output[:, -1, :].reshape(output.shape[0], 1, output.shape[2]), axis=1)
-        if not os.path.exists(os.path.join(base_path, save_path)):
-            os.mkdir(os.path.join(base_path, save_path))
-        video_name = rgb_video_path.split('/')[-1]
-        numbers = re.sub(r'[^0-9]', '', video_name)
-        np.save(os.path.join(base_path, save_path, numbers), output)
-    
-    if result_record:
-        result_out.release()
-
 def main_function():
-    if not use_video:
-        main()
-    elif use_realsense:
-        main()
+    main(video_folder_path='C:/Users/user/Desktop/test')
+    #main()
 
 if __name__ == "__main__":
     main_function()

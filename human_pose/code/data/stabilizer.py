@@ -99,6 +99,7 @@ class Stabilizer:
                                                         [0, 1]], np.float32) * cov_measure
 
 
+
 def main():
     """Test code"""
     global mp

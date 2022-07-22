@@ -71,6 +71,7 @@ def inference(pose_sequence):
         action_vote[results[i]] += 1
     results[-1] = y_pred
     action_vote[results[-1]] += 1
+    #print(action_vote)
     max_voted_action_val = np.max(action_vote)
     max_voted_action_class = np.argmax(action_vote)
     

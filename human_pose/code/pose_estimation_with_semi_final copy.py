@@ -297,6 +297,7 @@ def main(color=(224, 255, 255), rgb_video_path = 'save.avi', depth_video_path = 
                     # Convert images to numpy arrays
                     depth = np.array(depth.get_data())
                     frame = np.array(frame.get_data())
+                    print(frame.shape)
                 elif use_video:
                     ret, frame = rgb_cap.read()
                     ret, depth = depth_cap.read()

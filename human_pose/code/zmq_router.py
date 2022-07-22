@@ -13,7 +13,7 @@ def router_function():
 
     while True:
         # message read from txt file to communicate with tracker
-        communication_read = open('communication.txt', 'r')
+        communication_read = open('C:/Users/user/Desktop/version/human_pose_estimation/human_pose/code/communication.txt', 'r')
         for i in range(4):
             line[i] = communication_read.readline()
         communication_read.close()
@@ -21,7 +21,7 @@ def router_function():
         message = str(message)[2]
 
         # message write to txt file to communicate with tracker
-        communication_write = open('communication.txt', 'r+')
+        communication_write = open('C:/Users/user/Desktop/version/human_pose_estimation/human_pose/code/communication.txt', 'r+')
         communication_write.write(message)
         communication_write.close()
         #while line[0] == '':

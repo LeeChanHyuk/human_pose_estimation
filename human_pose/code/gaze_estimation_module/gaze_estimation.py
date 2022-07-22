@@ -31,14 +31,14 @@ eyenet = EyeNet(nstack=nstack, nfeatures=nfeatures, nlandmarks=nlandmarks).to(de
 eyenet.load_state_dict(checkpoint['model_state_dict'])
 
 
-def estimate_gaze_from_face_image(orig_frame, frame, face_coordinate, left_eye_boxes, right_eye_boxes, visualization):
-    eye_boxes = np.concatenate([right_eye_boxes, left_eye_boxes], axis=0)
+def estimate_gaze_from_face_image(orig_frame, frame, human_info, visualization):
+    eye_boxes = np.concatenate([human_info.left_eye_box, human_info.right_eye_box], axis=0)
     current_face = None
     landmarks = None
     alpha = 1
     left_eye = None
     right_eye = None
-    faces = face_coordinate
+    faces = human_info.face_box
     orig_frame = cv2.cvtColor(orig_frame, cv2.COLOR_BGR2RGB)
     gray = cv2.cvtColor(orig_frame, cv2.COLOR_RGB2GRAY)
     if len(faces):
@@ -54,8 +54,6 @@ def estimate_gaze_from_face_image(orig_frame, frame, face_coordinate, left_eye_b
             landmarks = next_landmarks * alpha + (1 - alpha) * landmarks
         else:
             landmarks = next_landmarks
-
-
 
     if landmarks is not None:
         eye_samples = segment_eyes(gray, landmarks, visualization)

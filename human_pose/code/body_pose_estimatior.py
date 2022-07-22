@@ -125,7 +125,7 @@ def upside_body_pose_calculator(left_shoulder, right_shoulder, center_stomach):
 
 
 
-def body_keypoint_extractor(body_landmarks, landmark_names, depth, width, height, normal_camera=False, use_realsense = True):
+def body_keypoint_extractor(body_landmarks, landmark_names, depth, width, height):
 
     """Params
     body_landmarks : body_landmarks from the mediapipe's body keypoint tracking algorithm
@@ -160,41 +160,20 @@ def body_keypoint_extractor(body_landmarks, landmark_names, depth, width, height
     left_x_offset = 20
     right_x_offset = 20
     right_y_offset = 10
-    if normal_camera:
-        center_hip = (left_hip + right_hip) / 2
-        center_stomach = [int(max(0, min(center_hip[0], width-1))),int(max(0, min((center_hip[1] * 1 + (left_shoulder[1] + right_shoulder[1]) * 2)/3, height-1))), 0]
-        center_mouth = (mouth_left + mouth_right) / 2
-    elif use_realsense:
-        nose[2] = depth[min(int(nose[1]), height-1), min(width-1, int(nose[0]))]
-        left_ear[2] = depth[min(int(left_ear[1])+left_y_offset, height-1), min(width-1, int(left_ear[0])-left_x_offset)]
-        right_ear[2] = depth[min(int(right_ear[1])+right_y_offset, height-1), min(width-1, max(0, int(right_ear[0])+right_x_offset))]
-        mouth_left[2] = depth[min(int(mouth_left[1])+left_y_offset, height-1), min(width-1, int(mouth_left[0])-left_x_offset)]
-        mouth_right[2] = depth[min(int(mouth_right[1])+right_y_offset, height-1), min(width-1, max(0, int(mouth_right[0])+right_x_offset))]
-        left_shoulder[2] = depth[min(int(left_shoulder[1])+left_y_offset, height-1), min(width-1, int(left_shoulder[0])-left_x_offset)]
-        right_shoulder[2] = depth[min(int(right_shoulder[1])+right_y_offset, height-1), min(width-1, max(0, int(right_shoulder[0])+right_x_offset))]
+    nose[2] = depth[min(int(nose[1]), height-1), min(width-1, int(nose[0]))]
+    left_ear[2] = depth[min(int(left_ear[1])+left_y_offset, height-1), min(width-1, int(left_ear[0])-left_x_offset)]
+    right_ear[2] = depth[min(int(right_ear[1])+right_y_offset, height-1), min(width-1, max(0, int(right_ear[0])+right_x_offset))]
+    mouth_left[2] = depth[min(int(mouth_left[1])+left_y_offset, height-1), min(width-1, int(mouth_left[0])-left_x_offset)]
+    mouth_right[2] = depth[min(int(mouth_right[1])+right_y_offset, height-1), min(width-1, max(0, int(mouth_right[0])+right_x_offset))]
+    left_shoulder[2] = depth[min(int(left_shoulder[1])+left_y_offset, height-1), min(width-1, int(left_shoulder[0])-left_x_offset)]
+    right_shoulder[2] = depth[min(int(right_shoulder[1])+right_y_offset, height-1), min(width-1, max(0, int(right_shoulder[0])+right_x_offset))]
 
-        left_hip[2] = depth[min(int(left_hip[1])+left_y_offset, height-1), min(width-1, int(left_hip[0])-left_x_offset)]
-        right_hip[2] = depth[min(int(right_hip[1])+right_y_offset, height-1), min(width-1, max(0, int(right_hip[0])+right_x_offset))]
-        
-        center_hip = (left_hip + right_hip) / 2
-        center_stomach = [int(max(0, min(center_hip[0], width-1))),int(max(0, min((center_hip[1] * 1 + (left_shoulder[1] + right_shoulder[1]) * 2)/3, height-1))), 0]
-        center_stomach[2] = depth[center_stomach[1], center_stomach[0]]
-        center_mouth = (mouth_left + mouth_right) / 2
-    else:
-        nose[2] = depth[min(int(nose[1]), height-1), min(width-1, int(nose[0])), 0]
-        left_ear[2] = depth[min(int(left_ear[1])+left_y_offset, height-1), min(width-1, int(left_ear[0])-left_x_offset), 0]
-        right_ear[2] = depth[min(int(right_ear[1])+right_y_offset, height-1), min(width-1, max(0, int(right_ear[0])+right_x_offset)), 0]
-        mouth_left[2] = depth[min(int(mouth_left[1])+left_y_offset, height-1), min(width-1, int(mouth_left[0])-left_x_offset), 0]
-        mouth_right[2] = depth[min(int(mouth_right[1])+right_y_offset, height-1), min(width-1, max(0, int(mouth_right[0])+right_x_offset)), 0]
-        left_shoulder[2] = depth[min(int(left_shoulder[1])+left_y_offset, height-1), min(width-1, int(left_shoulder[0])-left_x_offset), 0]
-        right_shoulder[2] = depth[min(int(right_shoulder[1])+right_y_offset, height-1), min(width-1, max(0, int(right_shoulder[0])+right_x_offset)), 0]
-
-        left_hip[2] = depth[min(int(left_hip[1])+left_y_offset, height-1), min(width-1, int(left_hip[0])-left_x_offset), 0]
-        right_hip[2] = depth[min(int(right_hip[1])+right_y_offset, height-1), min(width-1, max(0, int(right_hip[0])+right_x_offset)), 0]
-        
-        center_hip = (left_hip + right_hip) / 2
-        center_stomach = [int(max(0, min(center_hip[0], width-1))),int(max(0, min((center_hip[1] * 1 + (left_shoulder[1] + right_shoulder[1]) * 2)/3, height-1))), 0]
-        center_stomach[2] = depth[center_stomach[1], center_stomach[0], 0]
-        center_mouth = (mouth_left + mouth_right) / 2
+    left_hip[2] = depth[min(int(left_hip[1])+left_y_offset, height-1), min(width-1, int(left_hip[0])-left_x_offset)]
+    right_hip[2] = depth[min(int(right_hip[1])+right_y_offset, height-1), min(width-1, max(0, int(right_hip[0])+right_x_offset))]
+    
+    center_hip = (left_hip + right_hip) / 2
+    center_stomach = [int(max(0, min(center_hip[0], width-1))),int(max(0, min((center_hip[1] * 1 + (left_shoulder[1] + right_shoulder[1]) * 2)/3, height-1))), 0]
+    center_stomach[2] = depth[center_stomach[1], center_stomach[0]]
+    center_mouth = (mouth_left + mouth_right) / 2
 
     return left_shoulder, right_shoulder, center_stomach, center_mouth, left_x_offset, left_y_offset, right_x_offset, right_y_offset, center_eye
